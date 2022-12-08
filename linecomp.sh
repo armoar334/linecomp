@@ -27,7 +27,10 @@ commands_get() {
 }
 
 search_escape() {
-	search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$search_term") # Escape regex chars for grep
+	#printf ''
+	search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g; s/\\ / /g' <<<"$search_term") # Escape regex chars for grep
+	# This is horribly, awfully inefficient. fix later
+	#search_term="${search_term//\\ / }"
 }
 
 subdir_completion() {
@@ -40,29 +43,34 @@ subdir_completion() {
 			folders="${two%'/'*}/"
 			search_term="${two/$folders}"
 			search_escape
-			files="$folders"$(ls ${two%'/'*} | grep -v '\.$' | grep '^'"$search_term" )
+			files="$folders"$(ls ${two%'/'*} | grep -- '^'"$search_term" )
 		fi
 	else
 		search_term="$two"
-		#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$search_term") # Escape regex chars for grep
-		files=$(ls | grep -v '\.$' | grep '^'"$search_term" )
+		search_escape
+		files=$(ls | grep -- '^'"$search_term" )
 	fi
 	all="$files$args"
 	two="${all%%$'\n'*}/"
 	two="${two// /\\ }" # Fix files with spaces
-	if ! [[ -d "$two" ]]; # Remove / if not directory
+	if ! [[ -d "$two" ]] || [[ -z "$two" ]]; # Remove / if not directory or string empty
 	then
 		two="${two:0:-1}"
 	fi
+
 }
 
 arg_completion() {
-	args=$(cat ~/.local/share/linecomp.txt | grep -- "$command" | cut -d ' ' -f2 | tr ',' '\n' )
+	search_term="$command"
+	search_escape
+	args=$(cat ~/.local/share/linecomp.txt | grep -- "$search_term" | cut -d ' ' -f2 | tr ',' '\n' )
 	if [[ "$string" == *'$commands'* ]];
 	then
-		args+="HUGECOCK"
+		args="HUGECOCK"
 	fi
-	args=$(echo "$args" | tr ' ' "\n" | grep -- "$two" )
+	search_term="$two"
+	search_escape
+	args=$(echo "$args" | tr ' ' "\n" | grep -- "$search_term" )
 }
 
 command_completion() {
