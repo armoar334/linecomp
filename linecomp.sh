@@ -81,16 +81,23 @@ command_completion() {
 			two="${string:2}"
 			subdir_completion
 			suggest="$one$two" ;;
+		*"|"*) # Pipes
+			one="${string%%'|'*}| "
+			two="${string/$one}"
+			search_term="$two"
+			search_escape
+			tabbed=$(grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
+			suggest="$one${tabbed%%$'\n'*}" ;;
 		*" "*) # Files/folders/arguments
 			command="${string%%' '*}"
 			one="${string%' '*}"
 			two="${string/$one }"
 			subdir_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
 			suggest="$one $two" ;;
-		*)
+		*) # GLobally available commands
 			search_term="$string"
 			search_escape
-			tabbed=$( grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
+			tabbed=$(grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
 			suggest="${tabbed%%$'\n'*}" ;;
 	esac
 	if [[ -z "$string" ]];
@@ -139,7 +146,6 @@ print_command_line() {
 	while [[ $running == true ]];
 	do
 		prompt="${PS1@P}"
-		#prompt="CompMagic "
 		reading="true"
 		string=()
 		histpos=$histmax
@@ -178,6 +184,8 @@ print_command_line() {
 				$'\005') curpos=${#string} ;;
 				$'\027') string="" ;;
 				# Catch undefined escapes
+				$'\01'*) printf "C 1 caught" ;;
+				$'\02'*) printf "C 2 caught" ;;
 				*) 	add_to_string && post_prompt="${suggest:${#string}}" ;;
 			esac
 			command_completion
