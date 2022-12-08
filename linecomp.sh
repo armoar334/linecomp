@@ -3,7 +3,7 @@
 # linecomp
 # posix readline "replacment" for bash
 # arguments for command in ~/.local/share/linecomp.txt with syntax
-# git add,rm,commit,etc
+# git add,push,commit,etc
 
 trap "echo linecomp exited" EXIT
 trap 'echo "^C" && string='' && printf "$prompt"' INT SIGINT
@@ -15,6 +15,7 @@ tab_char=$(printf "\t")
 post_prompt=""
 curpos=0
 suggest=""
+histmax=$(wc -l ~/.bash_history | cut -d ' ' -f1 )
 
 for code in {0..7}
 do
@@ -25,30 +26,26 @@ commands_get() {
 	commands=("$(compgen -c | sort -u )" ) # Add ones at the beginning to prioritise
 }
 
+search_escape() {
+	search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$search_term") # Escape regex chars for grep
+}
+
 subdir_completion() {
 	arg_completion
+	search_term=''
 	if [[ -d "${two%'/'*}" ]];
 	then
 		if [[ "$two" == *"/"* ]];
 		then
 			folders="${two%'/'*}/"
 			search_term="${two/$folders}"
-			search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$search_term") # Escape regex chars for grep
-			files="$folders$(ls ${two%'/'*} | grep -v '\.$' | grep -i '^'"$search_term")"
-			#echo ""
-			#echo "Files: $files"
-			#echo "Folders: $folders"
-			#echo "Search: $search_term"
+			search_escape
+			files="$folders"$(ls ${two%'/'*} | grep -v '\.$' | grep -i '^'"$search_term" )
 		fi
 	else
-		if [[ "${two%'/'*}" == "~"* ]]; # Special rules for home directory
-		then
-			search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$two") # Escape regex chars for grep
-			files="$(ls ~/ | grep -v '\.$' | grep -i '^'"$search_term")"
-		else
-			search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$two") # Escape regex chars for grep
-			files="$(ls | grep -v '\.$' | grep -i '^'"$search_term")"
-		fi
+		search_term="$two"
+		#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$search_term") # Escape regex chars for grep
+		files=$(ls | grep -v '\.$' | grep -i '^'"$search_term" )
 	fi
 	all="$files$args"
 	two="${all%%$'\n'*}/"
@@ -60,12 +57,12 @@ subdir_completion() {
 }
 
 arg_completion() {
-	args=$(cat ~/.local/share/linecomp.txt | grep "$command" | cut -d ' ' -f2 | tr ',' '\n' )
+	args=$(cat ~/.local/share/linecomp.txt | grep -- "$command" | cut -d ' ' -f2 | tr ',' '\n' )
 	if [[ "$string" == *'$commands'* ]];
 	then
 		args+="HUGECOCK"
 	fi
-	args=$(echo "$args" | tr ' ' "\n" | grep -i "$two" )
+	args=$(echo "$args" | tr ' ' "\n" | grep -- "$two" )
 }
 
 command_completion() {
@@ -85,7 +82,7 @@ command_completion() {
 		suggest="$one $two"
 	else # Globally available command
 		search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$string") # Escape regex chars for grep
-		tabbed="$( grep "^$search_term" <<<"${commands[@]}") "
+		tabbed="$( awk '/'"^$search_term"'/' <<<"${commands[@]}") "
 		#tabbed="$( echo $tabbed | sort -n -s )"
 		#echo "$tabbed"
 		suggest="${tabbed%%$'\n'*}"
@@ -114,12 +111,15 @@ del_from_string() {
 	fi
 }
 
-hist_up() {
-	printf ''
+hist_down() {
+	if [[ $histpos -lt $histmax ]]; then ((histpos+=1)); fi
+	suggest="$(sed -n "$histpos"p ~/.bash_history)"
 }
 
-hist_down() {
-	printf ''
+hist_up() {
+	if [[ $histpos -gt 0 ]]; then ((histpos-=1)); fi
+	if [[ $histpos == 0 ]]; then histpos=1; fi
+	suggest="$(sed -n "$histpos"p ~/.bash_history)"
 }
 
 
@@ -131,6 +131,7 @@ print_command_line() {
 		#prompt="CompMagic "
 		reading="true"
 		string=()
+		histpos=$histmax
 
 		oldifs=$IFS
 		IFS=''
@@ -160,7 +161,8 @@ print_command_line() {
 				"[D") [[ $curpos -gt 0 ]] && ((curpos-=1)) ;;
 				# Discardabl regexes
 				#"^[A-Z]"*) printf ;;
-				'[A'|'[B') printf "" ;;
+				'[A') ;; #hist_up ;;
+				'[B') ;; #hist_down ;;
 				# Control characters, may vary by system but idk
 				$'\001') curpos=0 ;;
 				$'\002') printf "\n" && string='' ;; # This is a placeholder, the actual thing for \C-c is the SIGINT trap above
@@ -177,7 +179,7 @@ print_command_line() {
 		IFS=$oldifs
 		echo "$string" >> ~/.bash_history
 		suggest=""
-		post_prompt=""
+		#post_prompt=""
 	done
 }
 
