@@ -151,19 +151,23 @@ print_command_line() {
 		IFS=''
 		while [[ "$reading" == "true" ]];
 		do
+			case "$string" in
+				'./'*) color=$(printf '\e[32m') ;;
+				*) color=$(printf '\e[31m') ;;
+			esac
 			printf "\e[2K\r$prompt" # Yeah, yeah, its slower to split it, bu its way easier to debug
 			echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
 			printf "\e7" # Save cursor position
 			echo -n "${string:$curpos}"
-			printf "$c1$post_prompt\e[0m\e8"
+			printf "$color$post_prompt\e[0m\e8"
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
 				read -rsn2 mode
-				if [[ "$mode" == "[1" ]]; # Ctrl + arrows
-				then
-					read -rsn2 mode
-				fi
+				#if [[ "$mode" == "[1" ]]; # Ctrl + arrows
+				#then
+				#	read -rsn2 mode
+				#fi
 			fi
 			case "$mode" in
 				# Specials
