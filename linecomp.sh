@@ -28,13 +28,14 @@ commands_get() {
 
 search_escape() {
 	#printf ''
-	search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g; s/\\ / /g' <<<"$search_term") # Escape regex chars for grep
+	#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g; s/\\ / /g' <<<"$search_term") # Escape regex chars for grep
 	# This is horribly, awfully inefficient. fix later
-	#search_term="${search_term//\\ / }"
+	search_term="${search_term//\\ / }"
+	search_term="${search_term//[/'['}"
 }
 
 subdir_completion() {
-	arg_completion
+	#arg_completion
 	search_term=''
 	if [[ -d "${two%'/'*}" ]];
 	then
@@ -43,7 +44,7 @@ subdir_completion() {
 			folders="${two%'/'*}/"
 			search_term="${two/$folders}"
 			search_escape
-			files="$folders"$(ls ${two%'/'*} | grep -- '^'"$search_term" )
+			files="$folders"$(ls "${two%'/'*}" | grep -- '^'"$search_term" )
 		fi
 	else
 		search_term="$two"
@@ -89,8 +90,8 @@ command_completion() {
 		subdir_completion
 		suggest="$one $two"
 	else # Globally available command
-		search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$string") # Escape regex chars for grep
-		tabbed="$( awk '/'"^$search_term"'/' <<<"${commands[@]}") "
+		search_escape
+		tabbed=$( grep -- "^$search_term" <<<"${commands[@]}")" "
 		#tabbed="$( echo $tabbed | sort -n -s )"
 		#echo "$tabbed"
 		suggest="${tabbed%%$'\n'*}"
