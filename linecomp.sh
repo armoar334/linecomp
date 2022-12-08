@@ -40,12 +40,12 @@ subdir_completion() {
 			folders="${two%'/'*}/"
 			search_term="${two/$folders}"
 			search_escape
-			files="$folders"$(ls ${two%'/'*} | grep -v '\.$' | grep -i '^'"$search_term" )
+			files="$folders"$(ls ${two%'/'*} | grep -v '\.$' | grep '^'"$search_term" )
 		fi
 	else
 		search_term="$two"
 		#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g' <<<"$search_term") # Escape regex chars for grep
-		files=$(ls | grep -v '\.$' | grep -i '^'"$search_term" )
+		files=$(ls | grep -v '\.$' | grep '^'"$search_term" )
 	fi
 	all="$files$args"
 	two="${all%%$'\n'*}/"
@@ -87,7 +87,12 @@ command_completion() {
 		#echo "$tabbed"
 		suggest="${tabbed%%$'\n'*}"
 	fi
-	post_prompt="${suggest:${#string}}"
+	if [[ -z "$string" ]];
+	then
+		post_prompt=""
+	else
+		post_prompt="${suggest:${#string}}"
+	fi
 }
 
 add_to_string() {
@@ -179,7 +184,7 @@ print_command_line() {
 		IFS=$oldifs
 		echo "$string" >> ~/.bash_history
 		suggest=""
-		#post_prompt=""
+		post_prompt=""
 	done
 }
 
