@@ -35,7 +35,7 @@ search_escape() {
 }
 
 subdir_completion() {
-	#arg_completion
+	arg_completion
 	search_term=''
 	if [[ -d "${two%'/'*}" ]]; # Subdirectories
 	then
@@ -65,9 +65,9 @@ arg_completion() {
 	search_term="$command"
 	search_escape
 	args=$(cat ~/.local/share/linecomp.txt | grep -- "$search_term" | cut -d ' ' -f2 | tr ',' '\n' )
-	if [[ "$string" == *'$commands'* ]];
+	if [[ "$args" == *'$commands'* ]];
 	then
-		args="HUGECOCK"
+		args="$commands"
 	fi
 	search_term="$two"
 	search_escape
