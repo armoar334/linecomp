@@ -37,19 +37,19 @@ search_escape() {
 subdir_completion() {
 	#arg_completion
 	search_term=''
-	if [[ -d "${two%'/'*}" ]];
+	if [[ -d "${two%'/'*}" ]]; # Subdirectories
 	then
 		if [[ "$two" == *"/"* ]];
 		then
 			folders="${two%'/'*}/"
 			search_term="${two/$folders}"
 			search_escape
-			files="$folders"$(ls "${two%'/'*}" | grep -- '^'"$search_term" )
+			files="$folders"$(ls "${two%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" )
 		fi
-	else
+	else # Directory in current pwd
 		search_term="$two"
 		search_escape
-		files=$(ls | grep -- '^'"$search_term" )
+		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" )
 	fi
 	all="$files$args"
 	two="${all%%$'\n'*}/"
@@ -87,11 +87,11 @@ command_completion() {
 		command="${string%%' '*}"
 		one="${string%' '*}"
 		two="${string/$one }"
-		subdir_completion
+		subdir_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
 		suggest="$one $two"
 	else # Globally available command
 		search_escape
-		tabbed=$( grep -- "^$search_term" <<<"${commands[@]}")" "
+		tabbed=$( grep -- "^$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
 		#tabbed="$( echo $tabbed | sort -n -s )"
 		#echo "$tabbed"
 		suggest="${tabbed%%$'\n'*}"
@@ -171,8 +171,8 @@ print_command_line() {
 				"$back_space")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") string="$suggest" && curpos=${#string} ;;
 				# Cursor
-				"[C") if [[ $curpos -ge ${#string} ]] && [[ ! -z "$suggest" ]]; then string="$suggest"; curpos=${#string}; fi && if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
-				"[D") [[ $curpos -gt 0 ]] && ((curpos-=1)) ;;
+				"[C") if [[ "$curpos" -ge "${#string}" ]] && [[ ! -z "$suggest" ]]; then string="$suggest"; curpos=${#string}; fi && if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
+				"[D") [[ "$curpos" -gt 0 ]] && ((curpos-=1)) ;;
 				# Discardabl regexes
 				#"^[A-Z]"*) printf ;;
 				'[A') ;; #hist_up ;;
