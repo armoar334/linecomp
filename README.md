@@ -1,2 +1,18 @@
-# liinecomp
-A readline "replacement" in/for bash
+# linecomp
+A readline "replacement" in/for bash  
+
+# usage
+source linecomp.sh at the end of your bashrc, and add linecomp.txt in ~/.local/share. This is for custom command completion  
+
+# Features
+Subdirectory / Directory completion  
+Command completion  
+Some readline shortcuts re-implemented  
+
+# Goals [percentages are estiamtes]
+Feature parity with GNU Readline - ~75%  
+Feature parity with bash-completions - ~30%  
+
+# Why
+The only existing readline replacement that achieves my desired results is ble.sh, and as much of a feat as it is, its far too bloated and slow for my liking. as a result, I began to implement my own line-editor, and thats what linecomp has become since  
+I mean yeah, i could just use zsh or fish but wheres the fun in that?
