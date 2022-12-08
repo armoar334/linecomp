@@ -90,10 +90,9 @@ command_completion() {
 		subdir_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
 		suggest="$one $two"
 	else # Globally available command
+		search_term="$string"
 		search_escape
-		tabbed=$( grep -- "^$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
-		#tabbed="$( echo $tabbed | sort -n -s )"
-		#echo "$tabbed"
+		tabbed=$( grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
 		suggest="${tabbed%%$'\n'*}"
 	fi
 	if [[ -z "$string" ]];
@@ -146,15 +145,12 @@ print_command_line() {
 		reading="true"
 		string=()
 		histpos=$histmax
+		color=$(printf '\e[31m')
 
 		oldifs=$IFS
 		IFS=''
 		while [[ "$reading" == "true" ]];
 		do
-			case "$string" in
-				'./'*) color=$(printf '\e[32m') ;;
-				*) color=$(printf '\e[31m') ;;
-			esac
 			printf "\e[2K\r$prompt" # Yeah, yeah, its slower to split it, bu its way easier to debug
 			echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
 			printf "\e7" # Save cursor position
@@ -164,10 +160,6 @@ print_command_line() {
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
 				read -rsn2 mode
-				#if [[ "$mode" == "[1" ]]; # Ctrl + arrows
-				#then
-				#	read -rsn2 mode
-				#fi
 			fi
 			case "$mode" in
 				# Specials
@@ -175,7 +167,7 @@ print_command_line() {
 				"$back_space")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") string="$suggest" && curpos=${#string} ;;
 				# Cursor
-				"[C") if [[ "$curpos" -ge "${#string}" ]] && [[ ! -z "$suggest" ]]; then string="$suggest"; curpos=${#string}; fi && if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
+				"[C") if [[ "$curpos" -ge "${#string}" ]] && [[ "${#suggest}" -gt 1 ]]; then string="$suggest"; curpos=${#string}; fi && if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
 				"[D") [[ "$curpos" -gt 0 ]] && ((curpos-=1)) ;;
 				# Discardabl regexes
 				#"^[A-Z]"*) printf ;;
