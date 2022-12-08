@@ -75,26 +75,24 @@ arg_completion() {
 }
 
 command_completion() {
-	if [[ "$string" == "./"* ]]; # Executable in current directory
-	then
-		one="./"
-		two="${string:2}"
-		subdir_completion
-		suggest="$one$two"
-	elif [[ "$string" == *" "* ]] && [[ ${#string} -ge 2 ]] ; # Files/folders/arguments
-	then
-		# This doesnt like filenames with space, but tbf neither does bash normally so idc
-		command="${string%%' '*}"
-		one="${string%' '*}"
-		two="${string/$one }"
-		subdir_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
-		suggest="$one $two"
-	else # Globally available command
-		search_term="$string"
-		search_escape
-		tabbed=$( grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
-		suggest="${tabbed%%$'\n'*}"
-	fi
+	case "$string" in
+		"./"*) # Executable in current directory
+			one="./"
+			two="${string:2}"
+			subdir_completion
+			suggest="$one$two" ;;
+		*" "*) # Files/folders/arguments
+			command="${string%%' '*}"
+			one="${string%' '*}"
+			two="${string/$one }"
+			subdir_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
+			suggest="$one $two" ;;
+		*)
+			search_term="$string"
+			search_escape
+			tabbed=$( grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
+			suggest="${tabbed%%$'\n'*}" ;;
+	esac
 	if [[ -z "$string" ]];
 	then
 		post_prompt=""
