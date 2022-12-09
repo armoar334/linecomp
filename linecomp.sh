@@ -23,7 +23,7 @@ do
 done
 
 commands_get() {
-	commands=("$(compgen -c | sort -u )" ) # Add ones at the beginning to prioritise
+	commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- ) # Add ones at the beginning to prioritise
 }
 
 search_escape() {
@@ -51,7 +51,7 @@ subdir_completion() {
 		search_escape
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" )
 	fi
-	all="$files$args"
+	all="$args$files"
 	two="${all%%$'\n'*}/"
 	two="${two// /\\ }" # Fix files with spaces
 	if ! [[ -d "$two" ]] || [[ -z "$two" ]]; # Remove / if not directory or string empty
