@@ -204,7 +204,8 @@ print_command_line() {
 			echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
 			printf "\e7" # Save cursor position
 			echo -n "${string:$curpos}"
-			printf "$color${post_prompt:$curpos}\e[0m\e8"
+			echo -n "$color${post_prompt:$curpos}"
+			printf '\e[0m\e8'
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
