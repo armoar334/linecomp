@@ -17,6 +17,7 @@ post_prompt=""
 curpos=0
 suggest=""
 histmax=$(wc -l ~/.bash_history | cut -d ' ' -f1 )
+multi_line=false
 
 for code in {0..7}
 do
@@ -186,11 +187,25 @@ finish_complete() {
 	fi
 }
 
+multi_check() {
+	if [[ "${string:$(( ${#string} - 1 ))}" == '\' ]];
+	then
+		multi_line=true
+	else
+		reading=false
+		multi_line=false
+	fi
+}
+
 print_command_line() {
 	running=true
 	while [[ $running == true ]];
 	do
-		prompt="${PS1@P}"
+		case "$multi_line" in
+			'false') prompt="${PS1@P}" ;;
+			'true') prompt="${PS2@P}" && string="${string//'\'/'\n'}" ;;
+			*) prompt='Fucky ' ;;
+		esac
 		reading="true"
 		string=()
 		histmax=$(( $(wc -l ~/.bash_history | cut -d ' ' -f1) + 1 ))
@@ -217,7 +232,7 @@ print_command_line() {
 			fi
 			case "$mode" in
 				# Specials
-				"$new_line")	reading="false";;
+				"$new_line")	multi_check ;; #reading="false";;
 				"$back_space")	if [[ ${#string} -gt 0 ]] && [[ $curpos -gt 0 ]]; then backspace_from_string; fi ;;
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") finish_complete  && curpos=${#string} ;;
@@ -244,7 +259,7 @@ print_command_line() {
 			command_completion
 		done
 		printf '\n'
-		echo "$string" >> ~/.bash_history
+		if ! [[ -z "$string" ]]; then echo "$string" >> ~/.bash_history; fi
 		eval "$string" # I hate this, and you should know that i hate it pls
 		IFS=$oldifs
 		suggest=""
