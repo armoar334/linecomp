@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # linecomp
-# posix readline "replacment" for bash
+# readline "replacment" for bash
 # arguments for command in ~/.local/share/linecomp.txt with syntax
 # git add,push,commit,etc
 
@@ -11,6 +11,7 @@ trap 'echo "^C" && string='' && printf "$prompt"' INT SIGINT
 escape_char=$(printf "\u1b")
 new_line=$(printf "\n")
 back_space=$(printf "\177")
+delete_char="[3"
 tab_char=$(printf "\t")
 post_prompt=""
 curpos=0
@@ -81,6 +82,12 @@ command_completion() {
 			two="${string:2}"
 			subdir_completion
 			suggest="$one$two" ;;
+		*"| ./"*) # Pipe to local executable
+			# Having this hardcoded sucks but its fine until i fix the interpretation system
+			one="${string%%'|'*}| ./"
+			two="${string/$one}"
+			subdir_completion
+			suggest="$one$two" ;;
 		*"|"*) # Pipes
 			one="${string%%'|'*}| "
 			two="${string/$one}"
@@ -114,6 +121,14 @@ add_to_string() {
 }
 
 del_from_string() {
+	if [[ $curpos -ge 0 ]];
+	then
+		string="${string:0:$curpos}${string:$(( curpos + 1 ))}"
+	fi
+}
+
+
+backspace_from_string() {
 	if [[ $curpos -ge 1 ]];
 	then
 		((curpos-=1))
@@ -130,8 +145,14 @@ del_from_string() {
 }
 
 hist_down() {
-	if [[ $histpos -lt $histmax ]]; then ((histpos+=1)); fi
-	suggest="$(sed -n "$histpos"p ~/.bash_history)"
+	if [[ $histpos -le $histmax ]]; then ((histpos+=1)); fi
+	if [[ $histpos -le $histmax ]];
+	then
+		suggest="$(sed -n "$histpos"p ~/.bash_history)"
+	else
+		suggest=""
+	fi
+
 }
 
 hist_up() {
@@ -159,24 +180,29 @@ print_command_line() {
 			echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
 			printf "\e7" # Save cursor position
 			echo -n "${string:$curpos}"
-			printf "$color$post_prompt\e[0m\e8"
+			printf "$c1$post_prompt\e[0m\e8"
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
 				read -rsn2 mode
+				if [[ "$mode" == "[3" ]]; # Read 1 more to discard some stuff
+				then
+					read -rsn1 discard
+				fi
 			fi
 			case "$mode" in
 				# Specials
 				"$new_line")	reading="false";;
-				"$back_space")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
+				"$back_space")	if [[ ${#string} -gt 0 ]] && [[ $curpos -gt 0 ]]; then backspace_from_string; fi ;;
+				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") string="$suggest" && curpos=${#string} ;;
 				# Cursor
 				"[C") if [[ "$curpos" -ge "${#string}" ]] && [[ "${#suggest}" -gt 1 ]]; then string="$suggest"; curpos=${#string}; fi && if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
 				"[D") [[ "$curpos" -gt 0 ]] && ((curpos-=1)) ;;
 				# Discardabl regexes
 				#"^[A-Z]"*) printf ;;
-				'[A') ;; #hist_up ;;
-				'[B') ;; #hist_down ;;
+				'[A') hist_up ;;
+				'[B') hist_down ;;
 				# Control characters, may vary by system but idk
 				$'\001') curpos=0 ;;
 				$'\002') printf "\n" && string='' ;; # This is a placeholder, the actual thing for \C-c is the SIGINT trap above
