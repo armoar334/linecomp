@@ -116,11 +116,9 @@ command_completion() {
 			tabbed=$(grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
 			suggest="${tabbed%%$'\n'*}" ;;
 	esac
-	if [[ -z "$string" ]];
+	if ! [[ -z "$string" ]];
 	then
-		post_prompt=""
-	else
-		post_prompt="${suggest:${#string}}"
+		post_prompt="$suggest"
 	fi
 }
 
@@ -161,15 +159,23 @@ hist_down() {
 	else
 		suggest=""
 	fi
-
+	post_prompt="$suggest"
 }
 
 hist_up() {
 	if [[ $histpos -gt 0 ]]; then ((histpos-=1)); fi
 	if [[ $histpos == 0 ]]; then histpos=1; fi
-	suggest="$(sed -n "$histpos"p ~/.bash_history)"
+	suggest=$(sed -n "$histpos"p ~/.bash_history)
+	post_prompt="$suggest"
 }
 
+finish_complete() {
+	if [[ "${#post_prompt}" -gt 1 ]];
+	then
+		string="$post_prompt"
+		curpos=${#string}
+	fi
+}
 
 print_command_line() {
 	running=true
@@ -189,7 +195,7 @@ print_command_line() {
 			echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
 			printf "\e7" # Save cursor position
 			echo -n "${string:$curpos}"
-			printf "$c1$post_prompt\e[0m\e8"
+			printf "$c1${post_prompt:$curpos}\e[0m\e8"
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
@@ -204,9 +210,10 @@ print_command_line() {
 				"$new_line")	reading="false";;
 				"$back_space")	if [[ ${#string} -gt 0 ]] && [[ $curpos -gt 0 ]]; then backspace_from_string; fi ;;
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
-				"$tab_char") string="$suggest" && curpos=${#string} ;;
+				"$tab_char") finish_complete  && curpos=${#string} ;;
 				# Cursor
-				"[C") if [[ "$curpos" -ge "${#string}" ]] && [[ "${#suggest}" -gt 1 ]]; then string="$suggest"; curpos=${#string}; fi && if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
+				"[C")	if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi
+					if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi ;;
 				"[D") [[ "$curpos" -gt 0 ]] && ((curpos-=1)) ;;
 				# Discardabl regexes
 				#"^[A-Z]"*) printf ;;
@@ -221,7 +228,7 @@ print_command_line() {
 				# Catch undefined escapes
 				$'\01'*) printf "C 1 caught" ;;
 				$'\02'*) printf "C 2 caught" ;;
-				*) 	add_to_string && post_prompt="${suggest:${#string}}" ;;
+				*) 	add_to_string ;;
 			esac
 			command_completion
 		done
