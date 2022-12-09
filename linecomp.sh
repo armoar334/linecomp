@@ -97,12 +97,14 @@ command_completion() {
 			one="./"
 			two="${string:2}"
 			arg_completion
+			color=$c2
 			suggest="$one$two" ;;
 		*"| ./"*) # Pipe to local executable
 			# Having this hardcoded sucks but its fine until i fix the interpretation system
 			one="${string%%'|'*}| ./"
 			two="${string/$one}"
 			arg_completion
+			color=$c2
 			suggest="$one$two" ;;
 		*"|"*) # Pipes
 			one="${string%%'|'*}| "
@@ -117,7 +119,7 @@ command_completion() {
 			two="${string/$one }"
 			arg_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
 			suggest="$one $two" ;;
-		*) # GLobally available commands
+		*) # Globally available commands
 			search_term="$string"
 			search_escape
 			tabbed=$(grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
@@ -193,7 +195,6 @@ print_command_line() {
 		string=()
 		histmax=$(( $(wc -l ~/.bash_history | cut -d ' ' -f1) + 1 ))
 		histpos=$histmax
-		color=$(printf '\e[31m')
 
 		oldifs=$IFS
 		IFS=''
@@ -203,7 +204,7 @@ print_command_line() {
 			echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
 			printf "\e7" # Save cursor position
 			echo -n "${string:$curpos}"
-			printf "$c1${post_prompt:$curpos}\e[0m\e8"
+			printf "$color${post_prompt:$curpos}\e[0m\e8"
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
@@ -238,6 +239,7 @@ print_command_line() {
 				$'\02'*) printf "C 2 caught" ;;
 				*) 	add_to_string ;;
 			esac
+			color=$c1
 			command_completion
 		done
 		printf '\n'
