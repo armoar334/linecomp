@@ -96,13 +96,13 @@ command_completion() {
 		"./"*) # Executable in current directory
 			one="./"
 			two="${string:2}"
-			subdir_completion
+			arg_completion
 			suggest="$one$two" ;;
 		*"| ./"*) # Pipe to local executable
 			# Having this hardcoded sucks but its fine until i fix the interpretation system
 			one="${string%%'|'*}| ./"
 			two="${string/$one}"
-			subdir_completion
+			arg_completion
 			suggest="$one$two" ;;
 		*"|"*) # Pipes
 			one="${string%%'|'*}| "
