@@ -238,6 +238,7 @@ print_command_line() {
 		echo "$string" >> ~/.bash_history
 		suggest=""
 		post_prompt=""
+		curpos=0
 	done
 }
 
