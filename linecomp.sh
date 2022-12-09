@@ -6,7 +6,7 @@
 # git add,push,commit,etc
 
 trap "echo linecomp exited" EXIT
-trap 'echo "^C" && string='' && printf "$prompt"' INT SIGINT
+trap 'ctrl-c' INT SIGINT
 
 escape_char=$(printf "\u1b")
 new_line=$(printf "\n")
@@ -25,6 +25,13 @@ done
 
 commands_get() {
 	commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- ) # Add ones at the beginning to prioritise
+}
+
+ctrl-c() {
+	echo "^C"
+	string=''
+	printf "$prompt"
+	curpos=0
 }
 
 search_escape() {
@@ -184,6 +191,7 @@ print_command_line() {
 		prompt="${PS1@P}"
 		reading="true"
 		string=()
+		histmax=$(( $(wc -l ~/.bash_history | cut -d ' ' -f1) + 1 ))
 		histpos=$histmax
 		color=$(printf '\e[31m')
 
@@ -221,7 +229,7 @@ print_command_line() {
 				'[B') hist_down ;;
 				# Control characters, may vary by system but idk
 				$'\001') curpos=0 ;;
-				$'\002') printf "\n" && string='' ;; # This is a placeholder, the actual thing for \C-c is the SIGINT trap above
+				$'\002') ctrl-c ;; # This is a placeholder, the actual thing for \C-c is the SIGINT trap above
 				$'\004') [[ -z "$string" ]] && exit ;;
 				$'\005') curpos=${#string} ;;
 				$'\027') string="" ;;
