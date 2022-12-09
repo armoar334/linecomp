@@ -36,7 +36,6 @@ search_escape() {
 }
 
 subdir_completion() {
-	arg_completion
 	search_term=''
 	if [[ -d "${two%'/'*}" ]]; # Subdirectories
 	then
@@ -52,27 +51,37 @@ subdir_completion() {
 		search_escape
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" )
 	fi
-	all="$args$files"
-	two="${all%%$'\n'*}/"
-	two="${two// /\\ }" # Fix files with spaces
-	if ! [[ -d "$two" ]] || [[ -z "$two" ]]; # Remove / if not directory or string empty
+	files="${files%%$'\n'*}/"
+	files="${files// /\\ }" # Fix files with spaces
+	if ! [[ -d "$files" ]] || [[ -z "$files" ]]; # Remove / if not directory or string empty
 	then
-		two="${two:0:-1}"
+		files="${files:0:-1}"
 	fi
-
 }
 
 arg_completion() {
+	args=''
+	files=''
 	search_term="$command"
 	search_escape
-	args=$(cat ~/.local/share/linecomp.txt | grep -- "$search_term" | cut -d ' ' -f2 | tr ',' '\n' )
+	args=$(cat ~/.local/share/linecomp.txt | grep -v '^#' | grep -- "$search_term" | cut -d ' ' -f2 | tr ',' '\n' )
 	if [[ "$args" == *'$commands'* ]];
 	then
 		args="$commands"
 	fi
+	if [[ "$args" == *'$files'* ]] || [[ -z "$arg" ]]; # if command isnt listed or has files enabled as suggestions then add subdir
+	then
+		args="${args//'$files'/}"
+		subdir_completion
+	else
+		files=""
+	fi
+
 	search_term="$two"
 	search_escape
-	args=$(echo "$args" | tr ' ' "\n" | grep -- "$search_term" )
+	all="$args $files"
+	all=$(echo "$all" | tr ' ' "\n" | grep -- '^'"$search_term" )
+	two="${all%%$'\n'*}"
 }
 
 command_completion() {
@@ -99,7 +108,7 @@ command_completion() {
 			command="${string%%' '*}"
 			one="${string%' '*}"
 			two="${string/$one }"
-			subdir_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
+			arg_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
 			suggest="$one $two" ;;
 		*) # GLobally available commands
 			search_term="$string"
