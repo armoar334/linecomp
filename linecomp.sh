@@ -40,7 +40,7 @@ search_escape() {
 	#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g; s/\\ / /g' <<<"$search_term") # Escape regex chars for grep
 	# This is horribly, awfully inefficient. fix later
 	search_term="${search_term//\\ / }"
-	search_term="${search_term//[/'['}"
+	#search_term="${search_term//[/'['}"
 }
 
 subdir_completion() {
@@ -60,7 +60,7 @@ subdir_completion() {
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" )
 	fi
 	files="${files%%$'\n'*}/"
-	files="${files// /\\ }" # Fix files with spaces
+	#files="${files// /\ }" # Fix files with spaces
 	if ! [[ -d "$files" ]] || [[ -z "$files" ]]; # Remove / if not directory or string empty
 	then
 		files="${files:0:-1}"
@@ -111,8 +111,7 @@ command_completion() {
 			one="${string%%'|'*}| "
 			two="${string/$one}"
 			search_term="$two"
-			search_escape
-			tabbed=$(grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
+			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
 			suggest="$one${tabbed%%$'\n'*}" ;;
 		*" "*) # Files/folders/arguments
 			command="${string%%' '*}"
@@ -122,8 +121,7 @@ command_completion() {
 			suggest="$one $two" ;;
 		*) # Globally available commands
 			search_term="$string"
-			search_escape
-			tabbed=$(grep -- '^'"$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
+			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
 			suggest="${tabbed%%$'\n'*}" ;;
 	esac
 	if ! [[ -z "$string" ]];
