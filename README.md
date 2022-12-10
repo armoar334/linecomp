@@ -17,6 +17,7 @@ like every other shell?
 
 # usage
 source linecomp.sh at the end of your bashrc, and add linecomp.txt in ~/.local/share. This is for custom command completion  
+if it ever breaks something _really_ bad, you can set the variable ``running`` to anything other than ``true``  
 
 # Features
 Subdirectory / Directory completion  
