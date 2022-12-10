@@ -32,3 +32,6 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
  - Switch all if/else ladders to case statements for speed
  - Add all remaining emacs bindings
  - start vi mode implementation
+ - Config for keybinds instead of hardcoding
+
+Issues / Suggestions more than welcome! (im practically begging actually)
