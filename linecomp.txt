@@ -1,0 +1,5 @@
+# For commands such as sudo which require completion using globally available commands, add $commands to the list of args
+# For commands that require completion for files as well as arguments, add $files
+sudo $commands
+man $commands
+bash $files,-c,-i,-l,-r,-s,-D,--,--debugger,--dump-po-strings,--dump-strings,--help,--init-file,--rcfile,--login,--noediting,--noprofile,--norc,--posix,--restricted,--verbose,--version
