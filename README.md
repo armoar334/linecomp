@@ -5,8 +5,8 @@ A WIP readline "replacement" in/for bash
 They have! and if we're being honest, the other version of this are far, far ahead.  
 One of the big reasons is that __this isn't completion built into bash__. This awful amalgam of stackexchange snippets is a faux prompt, written as a bash script, whereas all the other attempts use ``bind`` and other similar programs to truly read the contents of the prompt and amend to it. This does however have some pros and cons:  
 Pros:  
- - We can much more easily case the whole prompt and the cursors position within it
-Cons:
+ - We can much more easily case the whole prompt and the cursors position within it  
+Cons:  
  - Potentially much slower
  - Have to contend with ``read`` and escape character issues
 
