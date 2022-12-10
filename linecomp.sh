@@ -177,6 +177,8 @@ hist_up() {
 	post_prompt="$suggest"
 }
 
+hist_search() {}
+
 finish_complete() {
 	if [[ "${#post_prompt}" -gt 1 ]];
 	then
@@ -188,10 +190,10 @@ finish_complete() {
 multi_check() {
 	if [[ "${string:$(( ${#string} - 1 ))}" == '\' ]];
 	then
-		multi_line=true
+		multi_line=1
 	else
-		reading=false
-		multi_line=false
+		reading='false'
+		multi_line='false'
 	fi
 }
 
@@ -200,9 +202,8 @@ print_command_line() {
 	while [[ $running == true ]];
 	do
 		case "$multi_line" in
-			'false') prompt="${PS1@P}" ;;
-			'true') prompt="${PS2@P}" && string="${string//'\'/'\n'}" ;;
-			*) prompt='Fucky ' ;;
+			1) prompt="\n"'Fucky ' ;;
+			*) prompt="${PS1@P}" ;;
 		esac
 		reading="true"
 		string=()
@@ -247,6 +248,7 @@ print_command_line() {
 				$'\002') ctrl-c ;; # This is a placeholder, the actual thing for \C-c is the SIGINT trap above
 				$'\004') [[ -z "$string" ]] && exit ;;
 				$'\005') curpos=${#string} ;;
+				$'\022') printf '' ;; # History search placeholder
 				$'\027') string="" ;;
 				# Catch undefined escapes
 				$'\01'*) printf "C 1 caught" ;;
