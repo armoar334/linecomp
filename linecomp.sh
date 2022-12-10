@@ -99,7 +99,7 @@ command_completion() {
 			suggest="$one$two" ;;
 		*"| ./"*) # Pipe to local executable
 			# Having this hardcoded sucks but its fine until i fix the interpretation system
-			one="${string%%'|'*}| ./"
+			one="${string%'|'*}| ./"
 			two="${string/$one}"
 			arg_completion
 			color=$c2
