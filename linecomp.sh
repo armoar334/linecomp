@@ -257,9 +257,12 @@ print_command_line() {
 			color=$c1
 			command_completion
 		done
+		printf "\e[2k\r"
+		echo -n "$prompt$string" # THis removes leftover suggestions 
 		printf '\n'
 		if ! [[ -z "$string" ]]; then echo "$string" >> ~/.bash_history; fi
 		eval "${string//\\ / }" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
+		history >/dev/null # Trim history according to normal bash
 		IFS=$oldifs
 		suggest=""
 		post_prompt=""
