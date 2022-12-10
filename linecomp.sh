@@ -28,7 +28,7 @@ commands_get() {
 	commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- ) # Add ones at the beginning to prioritise
 }
 
-ctrl-c() {
+ctrl-c() { # I think how this works in normal bash is that reading the input is a subprocess and Ctrl-c'ing it just kills the process
 	echo "^C"
 	string=''
 	printf "$prompt"

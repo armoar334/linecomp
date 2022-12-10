@@ -36,6 +36,7 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
 # Todo's ( in order of priority (should probably put somewhere else))
  - Multi-line statements with escapes
  - Replace grep with something less susceptible to regex injections / Fix my awful regex's
+ - Stop handling history ourselves and use ``history`` for it
  - Switch all if/else ladders to case statements for speed
  - Add all remaining emacs bindings
  - start vi mode implementation
