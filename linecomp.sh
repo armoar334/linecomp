@@ -177,7 +177,9 @@ hist_up() {
 	post_prompt="$suggest"
 }
 
-hist_search() {}
+hist_search() {
+	printf ''
+}
 
 finish_complete() {
 	if [[ "${#post_prompt}" -gt 1 ]];
