@@ -6,9 +6,14 @@ They have! and if we're being honest, the other version of this are far, far ahe
 One of the big reasons is that __this isn't completion built into bash__. This awful amalgam of stackexchange snippets is a faux prompt, written as a bash script, whereas all the other attempts use ``bind`` and other similar programs to truly read the contents of the prompt and amend to it. This does however have some pros and cons:  
 Pros:  
  - We can much more easily case the whole prompt and the cursors position within it  
+
 Cons:  
  - Potentially much slower
- - Have to contend with ``read`` and escape character issues
+ - Have to contend with ``read`` and escape character issues  
+
+It is worth noting therefore, that this might as well just be a new shell running bash under the hood  
+yknow  
+like every other shell?  
 
 # usage
 source linecomp.sh at the end of your bashrc, and add linecomp.txt in ~/.local/share. This is for custom command completion  
@@ -27,8 +32,9 @@ Vi mode + keybindings - 0%  (don't personally use so might never implement)
 The only existing readline replacement that achieves my desired results is ble.sh, and as much of a feat as it is, its far too bloated and slow for my liking. as a result, I began to implement my own line-editor, and thats what linecomp has become since  
 I mean yeah, i could just use zsh or fish but wheres the fun in that?  
 
-# Todo's (should probably put somewhere else)
- - Replace grep with something less susceptible to regex injections
+# Todo's ( in order of priority (should probably put somewhere else))
+ - Multi-line statements with escapes
+ - Replace grep with something less susceptible to regex injections / Fix my awful regex's
  - Switch all if/else ladders to case statements for speed
  - Add all remaining emacs bindings
  - start vi mode implementation

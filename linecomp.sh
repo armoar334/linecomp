@@ -259,7 +259,7 @@ print_command_line() {
 		done
 		printf '\n'
 		if ! [[ -z "$string" ]]; then echo "$string" >> ~/.bash_history; fi
-		eval "${string//\\ / }" # I hate this, and you should know that i hate it pls
+		eval "${string//\\ / }" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		IFS=$oldifs
 		suggest=""
 		post_prompt=""
