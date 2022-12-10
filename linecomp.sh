@@ -105,7 +105,7 @@ command_completion() {
 			color=$c2
 			suggest="$one$two" ;;
 		*"|"*) # Pipes
-			one="${string%%'|'*}| "
+			one="${string%'|'*}| "
 			two="${string/$one}"
 			search_term="$two"
 			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
