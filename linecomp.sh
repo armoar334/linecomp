@@ -81,8 +81,6 @@ arg_completion() {
 	then
 		args="${args//'$files'/}"
 		subdir_completion
-	else
-		files=""
 	fi
 
 	search_term="$two"
