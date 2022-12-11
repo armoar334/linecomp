@@ -203,8 +203,8 @@ finish_complete() {
 multi_check() {
 	if [[ "${string:$(( ${#string} - 1 ))}" == '\' ]];
 	then
-		string="$( sed 's/\\$/\
-/g' <<<"$string")"
+		reading='false'
+		#string="$( sed 's/\\$//g' <<<"$string")"
 	else
 		reading='false'
 	fi
@@ -268,6 +268,7 @@ print_command_line() {
 			color=$c1
 			command_completion
 		done
+		printf '\n'
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
 		eval "${string//\\ / }" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		history >/dev/null # Trim history according to normal bash
