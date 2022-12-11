@@ -39,7 +39,7 @@ do
 done
 
 commands_get() {
-	commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- ) # Add ones at the beginning to prioritise
+	commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
 }
 
 ctrl-c() { # I think how this works in normal bash is that reading the input is a subprocess and Ctrl-c'ing it just kills the process
@@ -50,11 +50,9 @@ ctrl-c() { # I think how this works in normal bash is that reading the input is 
 }
 
 search_escape() {
-	#printf ''
 	#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g; s/\\ / /g' <<<"$search_term") # Escape regex chars for grep
 	# This is horribly, awfully inefficient. fix later
 	search_term="${search_term//\\ / }"
-	search_term="${search_term//[/'['}"
 }
 
 subdir_completion() {
