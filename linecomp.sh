@@ -226,6 +226,15 @@ multi_check() {
 }
 
 print_command_line() {
+	printf "\e[2K\r$prompt" # Yeah, yeah, its slower to split it, bu its way easier to debug
+	echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
+	printf "\e7" # Save cursor position
+	echo -n "${string:$curpos}"
+	echo -n "$color${post_prompt:${#string}}"
+	printf '\e[0m\e8'
+}
+
+main_loop() {
 	running=true
 	while [[ $running == true ]];
 	do
@@ -239,13 +248,8 @@ print_command_line() {
 		IFS=''
 		while [[ "$reading" == "true" ]];
 		do
-			printf "\e[2K\r$prompt" # Yeah, yeah, its slower to split it, bu its way easier to debug
-			echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
-			printf "\e7" # Save cursor position
-			echo -n "${string:$curpos}"
-			echo -n "$color${post_prompt:${#string}}"
-			printf '\e[0m\e8'
-
+			printed_var=$(print_command_line)
+			echo -n "$printed_var"
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
@@ -299,5 +303,5 @@ print_command_line() {
 
 #key_binds
 commands_get
-print_command_line
+main_loop
 printf "\nlinecomp exited"
