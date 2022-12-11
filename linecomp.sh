@@ -6,11 +6,9 @@
 # git add,push,commit,etc
 
 # Check that current shell is bash
-CHECK_SHELL=$(ps -p $$)
-if [[ "$CHECK_SHELL" != *"bash"* ]];
+if [[ "$(ps -p $$)" != *"bash"* ]];
 then
 	echo "Your current shell is not bash!"
-	echo "It is $SHELL_CHECK"
 	echo "Many features will not work!"
 fi
 
@@ -34,7 +32,6 @@ post_prompt=""
 curpos=0
 suggest=""
 histmax=$(wc -l "$HISTFILE" | cut -d ' ' -f1 )
-multi_line=false
 
 for code in {0..7}
 do
@@ -126,7 +123,7 @@ command_completion() {
 				suggest="$one$two"
 			else
 				search_term="$two"
-				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
+				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
 				suggest="$one${tabbed%%$'\n'*}"
 			fi ;;
 		*" "*) # Files/folders/arguments
@@ -208,10 +205,10 @@ finish_complete() {
 multi_check() {
 	if [[ "${string:$(( ${#string} - 1 ))}" == '\' ]];
 	then
-		multi_line=1
+		string="$( sed 's/\\$/\
+/g' <<<"$string")"
 	else
 		reading='false'
-		multi_line='false'
 	fi
 }
 
@@ -219,12 +216,9 @@ print_command_line() {
 	running=true
 	while [[ $running == true ]];
 	do
-		case "$multi_line" in
-			1) prompt="\n"'Fucky ' ;;
-			*) prompt="${PS1@P}" ;;
-		esac
 		reading="true"
-		string=()
+		prompt="${PS1@P}"
+		string=''
 		histmax=$(( $(wc -l "$HISTFILE" | cut -d ' ' -f1) + 1 ))
 		histpos=$histmax
 
@@ -276,9 +270,6 @@ print_command_line() {
 			color=$c1
 			command_completion
 		done
-		printf "\e[2k\r"
-		echo -n "$prompt$string" # THis removes leftover suggestions 
-		printf '\n'
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
 		eval "${string//\\ / }" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		history >/dev/null # Trim history according to normal bash
