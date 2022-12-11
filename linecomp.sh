@@ -118,6 +118,21 @@ command_completion() {
 				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
 				suggest="$one${tabbed%%$'\n'*}"
 			fi ;;
+		*"&"*) # Ands
+			one="${string%'&'*}& "
+			two="${string/$one}"
+			if [[ "$two" == *"./"* ]]; # In case of local execuatable
+			then
+				one="${string%'&'*}& ./"
+				two="${string/$one}"
+				arg_completion
+				color=$c2
+				suggest="$one$two"
+			else
+				search_term="$two"
+				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
+				suggest="$one${tabbed%%$'\n'*}"
+			fi ;;
 		"./"*) # Executable in current directory
 			one="./"
 			two="${string:2}"
