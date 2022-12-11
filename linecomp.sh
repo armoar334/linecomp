@@ -103,12 +103,6 @@ arg_completion() {
 
 command_completion() {
 	case "$string" in
-		"./"*) # Executable in current directory
-			one="./"
-			two="${string:2}"
-			arg_completion
-			color=$c2
-			suggest="$one$two" ;;
 		*"|"*) # Pipes
 			one="${string%'|'*}| "
 			two="${string/$one}"
@@ -124,6 +118,12 @@ command_completion() {
 				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
 				suggest="$one${tabbed%%$'\n'*}"
 			fi ;;
+		"./"*) # Executable in current directory
+			one="./"
+			two="${string:2}"
+			arg_completion
+			color=$c2
+			suggest="$one$two" ;;
 		*" "*) # Files/folders/arguments
 			command="${string%%' '*}"
 			one="${string%' '*}"
