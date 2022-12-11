@@ -5,8 +5,25 @@
 # arguments for command in ~/.local/share/linecomp.txt with syntax
 # git add,push,commit,etc
 
+# Check that current shell is bash
+CHECK_SHELL=$(ps -p $$)
+if [[ "$CHECK_SHELL" != *"bash"* ]];
+then
+	echo "Your current shell is not bash!"
+	echo "It is $SHELL_CHECK"
+	echo "Many features will not work!"
+fi
+
+
+
 trap "echo linecomp exited" EXIT
 trap 'ctrl-c' INT SIGINT
+
+if [[ -z "$HISTFILE" ]];
+then
+	HISTFILE="~/.bash_history"
+fi
+
 
 escape_char=$(printf "\u1b")
 new_line=$(printf "\n")
@@ -16,7 +33,7 @@ tab_char=$(printf "\t")
 post_prompt=""
 curpos=0
 suggest=""
-histmax=$(wc -l ~/.bash_history | cut -d ' ' -f1 )
+histmax=$(wc -l "$HISTFILE" | cut -d ' ' -f1 )
 multi_line=false
 
 for code in {0..7}
@@ -160,7 +177,7 @@ hist_down() {
 	if [[ $histpos -le $histmax ]]; then ((histpos+=1)); fi
 	if [[ $histpos -le $histmax ]];
 	then
-		suggest="$(sed -n "$histpos"p ~/.bash_history)"
+		suggest="$(sed -n "$histpos"p "$HISTFILE")"
 	else
 		suggest=""
 	fi
@@ -170,7 +187,7 @@ hist_down() {
 hist_up() {
 	if [[ $histpos -gt 0 ]]; then ((histpos-=1)); fi
 	if [[ $histpos == 0 ]]; then histpos=1; fi
-	suggest=$(sed -n "$histpos"p ~/.bash_history)
+	suggest=$(sed -n "$histpos"p "$HISTFILE")
 	post_prompt="$suggest"
 }
 
@@ -206,7 +223,7 @@ print_command_line() {
 		esac
 		reading="true"
 		string=()
-		histmax=$(( $(wc -l ~/.bash_history | cut -d ' ' -f1) + 1 ))
+		histmax=$(( $(wc -l "$HISTFILE" | cut -d ' ' -f1) + 1 ))
 		histpos=$histmax
 
 		oldifs=$IFS
@@ -260,7 +277,7 @@ print_command_line() {
 		printf "\e[2k\r"
 		echo -n "$prompt$string" # THis removes leftover suggestions 
 		printf '\n'
-		if ! [[ -z "$string" ]]; then echo "$string" >> ~/.bash_history; fi
+		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
 		eval "${string//\\ / }" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		history >/dev/null # Trim history according to normal bash
 		IFS=$oldifs
