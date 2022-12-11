@@ -284,4 +284,4 @@ print_command_line() {
 #key_binds
 commands_get
 print_command_line
-echo "linecomp exited"
+printf "\nlinecomp exited"
