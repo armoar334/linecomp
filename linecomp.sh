@@ -228,8 +228,9 @@ print_command_line() {
 			echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
 			printf "\e7" # Save cursor position
 			echo -n "${string:$curpos}"
-			echo -n "$color${post_prompt:$curpos}"
+			echo -n "$color${post_prompt:${#string}}"
 			printf '\e[0m\e8'
+
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
@@ -246,8 +247,8 @@ print_command_line() {
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") finish_complete  && curpos=${#string} ;;
 				# Cursor
-				"[C")	if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi
-					if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi ;;
+				"[C")	if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi
+					if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
 				"[D") [[ "$curpos" -gt 0 ]] && ((curpos-=1)) ;;
 				# Discardabl regexes
 				#"^[A-Z]"*) printf ;;
