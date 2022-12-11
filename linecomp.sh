@@ -114,19 +114,21 @@ command_completion() {
 			arg_completion
 			color=$c2
 			suggest="$one$two" ;;
-		*"| ./"*) # Pipe to local executable
-			# Having this hardcoded sucks but its fine until i fix the interpretation system
-			one="${string%'|'*}| ./"
-			two="${string/$one}"
-			arg_completion
-			color=$c2
-			suggest="$one$two" ;;
 		*"|"*) # Pipes
 			one="${string%'|'*}| "
 			two="${string/$one}"
-			search_term="$two"
-			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
-			suggest="$one${tabbed%%$'\n'*}" ;;
+			if [[ "$two" == *"./"* ]]; # In case of local execuatable
+			then
+				one="${string%'|'*}| ./"
+				two="${string/$one}"
+				arg_completion
+				color=$c2
+				suggest="$one$two"
+			else
+				search_term="$two"
+				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
+				suggest="$one${tabbed%%$'\n'*}"
+			fi ;;
 		*" "*) # Files/folders/arguments
 			command="${string%%' '*}"
 			one="${string%' '*}"
