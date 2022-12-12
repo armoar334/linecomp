@@ -112,7 +112,7 @@ arg_completion() {
 
 command_completion() {
 	# Early work to make pipe completion more modular
-	check=$(echo "$string" | grep -o "\(&\||\|\./\| \)" | tr -d '\n' ) # Im never going to do another regex in my life
+	check=$(echo "$string" | grep -o "\(&\||\|\./\|\.\./\|~/\| \)" | tr -d '\n' ) # Im never going to do another regex in my life
 
 	case "$check" in
 		*"| ") # Pipes
@@ -127,18 +127,18 @@ command_completion() {
 			search_term="$two"
 			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
 			suggest="$one${tabbed%%$'\n'*}" ;;
+		*" "|*'../'|*'~/') # Files/folders/arguments
+			command="${string%%' '*}"
+			one="${string%' '*}"
+			two="${string##*' '}"
+			arg_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
+			suggest="$one $two" ;;
 		*"./") # Executable in current directory
 			one="${string%'./'*}./"
 			two="${string##*'./'}"
 			arg_completion
 			color=$c2
 			suggest="$one$two" ;;
-		*" ") # Files/folders/arguments
-			command="${string%%' '*}"
-			one="${string%' '*}"
-			two="${string/$one }"
-			arg_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
-			suggest="$one $two" ;;
 		*) # Globally available commands
 			search_term="$string"
 			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
@@ -210,10 +210,9 @@ finish_complete() {
 }
 
 multi_check() {
-	if [[ "${string:$(( ${#string} - 1 ))}" == '\' ]];
+	if [[ "${string:$(( curpos - 1 ))}" == *'\' ]];
 	then
-		reading='false'
-		#string="$( sed 's/\\$//g' <<<"$string")"
+		string+="$new_line"
 	else
 		reading='false'
 	fi
@@ -284,7 +283,7 @@ main_loop() {
 		done
 		printf '\n'
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
-		eval "${string//\\ / }" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
+		eval "$string" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		history >/dev/null # Trim history according to normal bash
 		IFS=$oldifs
 		suggest=""
