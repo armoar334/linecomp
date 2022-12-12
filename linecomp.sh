@@ -5,14 +5,21 @@
 # arguments for command in ~/.local/share/linecomp.txt with syntax
 # git add,push,commit,etc
 
+#
+# ABANDON ALL HOPE YE WHO ENTER HERE!
+# If you inted to commit code, i hope you have the patience of a saint, because
+# I am NOT a good programmer, and i'm an even worse social programmer
+# Style guides? no
+# Consistent and readable comments? You wish!
+
+
+
 # Check that current shell is bash
 if [[ "$(ps -p $$)" != *"bash"* ]];
 then
 	echo "Your current shell is not bash!"
 	echo "Many features will not work!"
 fi
-
-
 
 trap "echo linecomp exited" EXIT
 trap 'ctrl-c' INT SIGINT
@@ -32,6 +39,8 @@ post_prompt=""
 curpos=0
 suggest=""
 histmax=$(wc -l "$HISTFILE" | cut -d ' ' -f1 )
+
+read -r -d R p_start < <(printf '\e[6n')
 
 for code in {0..7}
 do
@@ -102,14 +111,23 @@ arg_completion() {
 }
 
 command_completion() {
-	case "$string" in
-		*"|"*) # Pipes
+	# Early work to make pipe completion more modular
+	check=$(echo "$string" | sed 's/[^|& ]//g' )
+	check="${check:$(( ${#check} - 1))}"
+	if [[ "$check" == "/" ]];
+	then
+		check="./"
+	fi
+
+
+	case "$check" in
+		"|") # Pipes
 			one="${string%'|'*}| "
-			two="${string/$one}"
+			two="${string##*'| '}"
 			if [[ "$two" == *"./"* ]]; # In case of local execuatable
 			then
 				one="${string%'|'*}| ./"
-				two="${string/$one}"
+				two="${string##*'| ./'}"
 				arg_completion
 				color=$c2
 				suggest="$one$two"
@@ -118,9 +136,9 @@ command_completion() {
 				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
 				suggest="$one${tabbed%%$'\n'*}"
 			fi ;;
-		*"&"*) # Ands
+		"&") # Ands
 			one="${string%'&'*}& "
-			two="${string/$one}"
+			two="${string##*'& '}"
 			if [[ "$two" == *"./"* ]]; # In case of local execuatable
 			then
 				one="${string%'&'*}& ./"
@@ -133,13 +151,13 @@ command_completion() {
 				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
 				suggest="$one${tabbed%%$'\n'*}"
 			fi ;;
-		"./"*) # Executable in current directory
+		"./") # Executable in current directory
 			one="./"
 			two="${string:2}"
 			arg_completion
 			color=$c2
 			suggest="$one$two" ;;
-		*" "*) # Files/folders/arguments
+		" ") # Files/folders/arguments
 			command="${string%%' '*}"
 			one="${string%' '*}"
 			two="${string/$one }"
@@ -225,9 +243,9 @@ multi_check() {
 	fi
 }
 
-print_command_line() {
-	printf "\e[2K\r$prompt" # Yeah, yeah, its slower to split it, bu its way easier to debug
-	echo -n "${string:0:$curpos}" # Needs to be seperate for certain characters
+print_command_line() { # This doesnt technichally need to be a different function but it reduced jitteriness to run all of it into a variable and print it all at once
+	printf "\e[2K\r" # Yeah, yeah, its slower to split it, bu its way easier to debug
+	echo -n "$prompt${string:0:$curpos}" # Needs to be seperate for certain characters
 	printf "\e7" # Save cursor position
 	echo -n "${string:$curpos}"
 	echo -n "$color${post_prompt:${#string}}"
