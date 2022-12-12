@@ -112,7 +112,7 @@ arg_completion() {
 
 command_completion() {
 	# Early work to make pipe completion more modular
-	check=$(echo "$string" | grep -o "\(&\||\|\./\|\.\./\|~/\| \)" | tr -d '\n' ) # Im never going to do another regex in my life
+	check=$(grep -o "\(&\||\|\./\|\.\./\|~/\| \)" <<<"$string" | tr -d '\n' ) # Im never going to do another regex in my life
 
 	case "$check" in
 		*"| ") # Pipes
@@ -222,8 +222,9 @@ print_command_line() { # This doesnt technichally need to be a different functio
 	printf "\e[2K\r" # Yeah, yeah, its slower to split it, bu its way easier to debug
 	echo -n "$prompt${string:0:$curpos}" # Needs to be seperate for certain characters
 	printf "\e7" # Save cursor position
-	echo -n "${string:$curpos}"
-	echo -n "$color${post_prompt:${#string}}"
+	echo -n "${string:$curpos}$color${post_prompt:${#string}}"
+	#back_num="${string:$curpos}${post_prompt:${#string}}"
+	#back_num=${#back_num}
 	printf '\e[0m\e8'
 }
 
