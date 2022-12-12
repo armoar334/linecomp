@@ -233,8 +233,6 @@ main_loop() {
 	do
 		reading="true"
 		prompt="${PS1@P}"
-		read -r bare_prompt < <(tr -dc '[[:print:]]' <<<"$prompt")
-		bare_prompt=${#bare_prompt}
 		string=''
 		histmax=$(( $(wc -l "$HISTFILE" | cut -d ' ' -f1) + 1 ))
 		histpos=$histmax
