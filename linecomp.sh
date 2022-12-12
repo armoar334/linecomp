@@ -56,8 +56,8 @@ commands_get() {
 ctrl-c() { # I think how this works in normal bash is that reading the input is a subprocess and Ctrl-c'ing it just kills the process
 	echo "^C"
 	string=''
-	printf "$prompt"
-	curpos=0
+	printf '\e[s'
+	print_command_line
 }
 
 search_escape() {
