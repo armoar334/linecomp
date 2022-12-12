@@ -112,52 +112,28 @@ arg_completion() {
 
 command_completion() {
 	# Early work to make pipe completion more modular
-	check=$(echo "$string" | sed 's/[^|& ]//g' )
-	check="${check:$(( ${#check} - 1))}"
-	if [[ "$check" == "/" ]];
-	then
-		check="./"
-	fi
-
+	check=$(echo "$string" | grep -o "\(&\||\|\./\| \)" | tr -d '\n' ) # Im never going to do another regex in my life
 
 	case "$check" in
-		"|") # Pipes
+		*"| ") # Pipes
 			one="${string%'|'*}| "
 			two="${string##*'| '}"
-			if [[ "$two" == *"./"* ]]; # In case of local execuatable
-			then
-				one="${string%'|'*}| ./"
-				two="${string##*'| ./'}"
-				arg_completion
-				color=$c2
-				suggest="$one$two"
-			else
-				search_term="$two"
-				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
-				suggest="$one${tabbed%%$'\n'*}"
-			fi ;;
-		"&") # Ands
-			one="${string%'&'*}& "
+			search_term="$two"
+			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
+			suggest="$one${tabbed%%$'\n'*}" ;;
+		*"& ") # Ands
+			one="${string%'& '*}& "
 			two="${string##*'& '}"
-			if [[ "$two" == *"./"* ]]; # In case of local execuatable
-			then
-				one="${string%'&'*}& ./"
-				two="${string/$one}"
-				arg_completion
-				color=$c2
-				suggest="$one$two"
-			else
-				search_term="$two"
-				tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
-				suggest="$one${tabbed%%$'\n'*}"
-			fi ;;
-		"./") # Executable in current directory
-			one="./"
-			two="${string:2}"
+			search_term="$two"
+			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
+			suggest="$one${tabbed%%$'\n'*}" ;;
+		*"./") # Executable in current directory
+			one="${string%'./'*}./"
+			two="${string##*'./'}"
 			arg_completion
 			color=$c2
 			suggest="$one$two" ;;
-		" ") # Files/folders/arguments
+		*" ") # Files/folders/arguments
 			command="${string%%' '*}"
 			one="${string%' '*}"
 			two="${string/$one }"
