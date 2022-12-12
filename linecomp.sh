@@ -224,7 +224,7 @@ print_command_line() { # This doesnt technichally need to be a different functio
 	# This is slow as a mf (urgent fix)
 	printf "\e[u\e[K"
 	echo -n "$prompt$string$color${post_prompt:${#string}}" # Needs to be seperate for certain characters
-	printf "\e[0m\e[u\e["$(( curpos + bare_prompt - 3 ))"C" # Reset colors, clear from cursor to EOL, load cursor pos
+	printf "\e[0m\e[K\e[u$prompt${string:0:$curpos}" # Reset colors, clear from cursor to EOL, load cursor pos
 }
 
 main_loop() {
