@@ -47,6 +47,8 @@ do
 	declare c$code=$(printf "\e[3"$code"m")
 done
 
+printf '\e7'
+
 commands_get() {
 	commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
 }
@@ -106,7 +108,7 @@ arg_completion() {
 
 	search_term="$two"
 	search_escape
-	all=$(printf "$args\n$files" | grep -- '^'"$search_term" )
+	all=$(printf "$args\n$files" | grep -m 1 '^'"$search_term" )
 	two="${all%%$'\n'*}"
 }
 
@@ -219,13 +221,10 @@ multi_check() {
 }
 
 print_command_line() { # This doesnt technichally need to be a different function but it reduced jitteriness to run all of it into a variable and print it all at once
-	printf "\e[2K\r" # Yeah, yeah, its slower to split it, bu its way easier to debug
-	echo -n "$prompt${string:0:$curpos}" # Needs to be seperate for certain characters
-	printf "\e7" # Save cursor position
-	echo -n "${string:$curpos}$color${post_prompt:${#string}}"
-	#back_num="${string:$curpos}${post_prompt:${#string}}"
-	#back_num=${#back_num}
-	printf '\e[0m\e8'
+	# This is slow as a mf (urgent fix)
+	printf "\e[u\e[K"
+	echo -n "$prompt$string$color${post_prompt:${#string}}" # Needs to be seperate for certain characters
+	printf "\e[0m\e[u\e["$(( curpos + bare_prompt - 3 ))"C" # Reset colors, clear from cursor to EOL, load cursor pos
 }
 
 main_loop() {
@@ -234,6 +233,8 @@ main_loop() {
 	do
 		reading="true"
 		prompt="${PS1@P}"
+		read -r bare_prompt < <(tr -dc '[[:print:]]' <<<"$prompt")
+		bare_prompt=${#bare_prompt}
 		string=''
 		histmax=$(( $(wc -l "$HISTFILE" | cut -d ' ' -f1) + 1 ))
 		histpos=$histmax
@@ -263,8 +264,6 @@ main_loop() {
 				"[C")	if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi
 					if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
 				"[D") [[ "$curpos" -gt 0 ]] && ((curpos-=1)) ;;
-				# Discardabl regexes
-				#"^[A-Z]"*) printf ;;
 				'[A') hist_up ;;
 				'[B') hist_down ;;
 				# Control characters, may vary by system but idk
@@ -274,7 +273,7 @@ main_loop() {
 				$'\005') curpos=${#string} ;;
 				$'\022') printf '' ;; # History search placeholder
 				$'\027') string="" ;;
-				# Catch undefined escapes
+				# Catch undefined escapes (doesnt work)
 				$'\01'*) printf "C 1 caught" ;;
 				$'\02'*) printf "C 2 caught" ;;
 				*) 	add_to_string ;;
@@ -286,6 +285,7 @@ main_loop() {
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
 		eval "$string" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		history >/dev/null # Trim history according to normal bash
+		printf '\e[s' # Save cursor pos
 		IFS=$oldifs
 		suggest=""
 		post_prompt=""
@@ -293,9 +293,6 @@ main_loop() {
 	done
 }
 
-# ble.sh uses bind -x
-
-#key_binds
 commands_get
 main_loop
 printf "\nlinecomp exited"
