@@ -13,7 +13,6 @@
 # Consistent and readable comments? You wish!
 
 
-
 # Check that current shell is bash
 if [[ "$(ps -p $$)" != *"bash"* ]];
 then
@@ -69,6 +68,7 @@ search_escape() {
 
 subdir_completion() {
 	search_term=''
+	#if [[ "$two" == "~/"* ]]; then two="${two/~\//$HOME/}"; fi # Fix later
 	if [[ -d "${two%'/'*}" ]]; # Subdirectories
 	then
 		if [[ "$two" == *"/"* ]];
@@ -121,9 +121,9 @@ command_suggest()  {
 
 command_completion() {
 	# Early work to make pipe completion more modular
-	check=$(grep -o "\(&\||\|\./\|\.\./\|\$(\| \)" <<<"$string" | tr -d '\n' ) # Im never going to do another regex in my life
+	#check=$(grep -o "\(&\||\|\./\|\.\./\|\$(\| \)" <<<"$string" | tr -d '\n' ) # Im never going to do another regex in my life
 
-	case "$check" in
+	case $(grep -o "\(&\||\|\./\|\.\./\|\$(\| \)" <<<"$string" | tr -d '\n' ) in
 		*"| ") # Pipes
 			one="${string%'|'*}| "
 			two="${string##*'| '}"
@@ -154,7 +154,7 @@ command_completion() {
 		*) # Globally available commands
 			search_term="$string"
 			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
-			suggest="${tabbed%%$'\n'*} " ;;
+			suggest="${tabbed%%$'\n'*}" ;;
 	esac
 	if ! [[ -z "$string" ]];
 	then
@@ -232,12 +232,13 @@ multi_check() {
 
 print_command_line() { # This doesnt technichally need to be a different function but it reduced jitteriness to run all of it into a variable and print it all at once
 	# This is slow as a mf (urgent fix)
+	# Line duplication could maybe be fixed via stty size checks?
 
 	printf "\r\e[?25l\e[K"
 	echo -n "$prompt${string:0:$curpos}"
-	printf '\e[s'
-	echo -n "${string:$curpos}$color${post_prompt:${#string}}" # Needs to be seperate for certain characters
-	printf "\e[0m\e[K\e[?25h\e[u"
+	printf '\e7'
+	echo -n "${string:$curpos}$color${post_prompt:${#string}}"
+	printf '\e[0m\e[K\e[?25h\e8'
 }
 
 main_loop() {
@@ -272,9 +273,8 @@ main_loop() {
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") finish_complete  && curpos=${#string} ;;
 				# Cursor
-				"[C")	if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi
-					if [[ $curpos -lt ${#string} ]]; then ((curpos+=1)); fi ;;
-				"[D") [[ "$curpos" -gt 0 ]] && ((curpos-=1)) ;;
+				"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && ((curpos+=1)) ;;
+				"[D") ((curpos-=1)) ;;
 				'[A') hist_up ;;
 				'[B') hist_down ;;
 				# Control characters, may vary by system but idk
@@ -290,13 +290,14 @@ main_loop() {
 				*) 	add_to_string ;;
 			esac
 			color=$c1
+			if [[ "$curpos" -le 0 ]]; then curpos=0; fi
+			if [[ "$curpos" -ge "${#string}" ]]; then ((curpos=${#string})); fi
 			command_completion
 		done
-		printf "\n$PS0"
+		printf "\n"
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
 		eval "$string" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		history >/dev/null # Trim history according to normal bash
-		printf '\e[s'
 		IFS=$oldifs
 		suggest=""
 		post_prompt=""
