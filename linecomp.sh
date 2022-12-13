@@ -19,6 +19,7 @@ if [[ "$(ps -p $$)" != *"bash"* ]];
 then
 	echo "Your current shell is not bash!"
 	echo "Many features will not work!"
+	return
 fi
 
 trap "echo linecomp exited" EXIT
@@ -112,24 +113,33 @@ arg_completion() {
 	two="${all%%$'\n'*}"
 }
 
+command_suggest()  {
+	tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
+	suggest="$one${tabbed%%$'\n'*}"
+}
+
+
 command_completion() {
 	# Early work to make pipe completion more modular
-	check=$(grep -o "\(&\||\|\./\|\.\./\|~/\| \)" <<<"$string" | tr -d '\n' ) # Im never going to do another regex in my life
+	check=$(grep -o "\(&\||\|\./\|\.\./\|\$(\| \)" <<<"$string" | tr -d '\n' ) # Im never going to do another regex in my life
 
 	case "$check" in
 		*"| ") # Pipes
 			one="${string%'|'*}| "
 			two="${string##*'| '}"
 			search_term="$two"
-			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
-			suggest="$one${tabbed%%$'\n'*}" ;;
+			command_suggest ;;
+		*'$(') # Subshells
+			one="${string%'$('*}"'$('
+			two="${string##*'$('}"
+			search_term="$two"
+			command_suggest ;;
 		*"& ") # Ands
 			one="${string%'& '*}& "
 			two="${string##*'& '}"
 			search_term="$two"
-			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
-			suggest="$one${tabbed%%$'\n'*}" ;;
-		*" "|*'../'|*'~/') # Files/folders/arguments
+			command_suggest ;;
+		*" "|*'../') # Files/folders/arguments
 			command="${string%%' '*}"
 			one="${string%' '*}"
 			two="${string##*' '}"
@@ -144,7 +154,7 @@ command_completion() {
 		*) # Globally available commands
 			search_term="$string"
 			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
-			suggest="${tabbed%%$'\n'*}" ;;
+			suggest="${tabbed%%$'\n'*} " ;;
 	esac
 	if ! [[ -z "$string" ]];
 	then
@@ -222,9 +232,12 @@ multi_check() {
 
 print_command_line() { # This doesnt technichally need to be a different function but it reduced jitteriness to run all of it into a variable and print it all at once
 	# This is slow as a mf (urgent fix)
-	printf "\e[u\e[K"
-	echo -n "$prompt$string$color${post_prompt:${#string}}" # Needs to be seperate for certain characters
-	printf "\e[0m\e[K\e[u$prompt${string:0:$curpos}" # Reset colors, clear from cursor to EOL, load cursor pos
+
+	printf "\r\e[?25l\e[K"
+	echo -n "$prompt${string:0:$curpos}"
+	printf '\e[s'
+	echo -n "${string:$curpos}$color${post_prompt:${#string}}" # Needs to be seperate for certain characters
+	printf "\e[0m\e[K\e[?25h\e[u"
 }
 
 main_loop() {
@@ -279,11 +292,11 @@ main_loop() {
 			color=$c1
 			command_completion
 		done
-		printf '\n'
+		printf "\n$PS0"
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
 		eval "$string" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		history >/dev/null # Trim history according to normal bash
-		printf '\e[s' # Save cursor pos
+		printf '\e[s'
 		IFS=$oldifs
 		suggest=""
 		post_prompt=""
@@ -294,3 +307,4 @@ main_loop() {
 commands_get
 main_loop
 printf "\nlinecomp exited"
+
