@@ -178,17 +178,20 @@ del_from_string() {
 
 
 backspace_from_string() {
-	if [[ $curpos -ge 1 ]];
+	if [[ ${#string} -gt 0 ]] && [[ $curpos -gt 0 ]];
 	then
-		((curpos-=1))
-	fi
-	if [[ $curpos -ge 0 ]];
-	then
-		if [[ $curpos -ge $(( ${#string} - 1 )) ]];
+		if [[ $curpos -ge 1 ]];
 		then
-			string="${string:0:-1}"
-		else
-			string="${string:0:$curpos}${string:$(( curpos + 1 ))}"
+			((curpos-=1))
+		fi
+		if [[ $curpos -ge 0 ]];
+		then
+			if [[ $curpos -ge $(( ${#string} - 1 )) ]];
+			then
+				string="${string:0:-1}"
+			else
+				string="${string:0:$curpos}${string:$(( curpos + 1 ))}"
+			fi
 		fi
 	fi
 }
@@ -239,10 +242,11 @@ print_command_line() {
 	# Line duplication could maybe be fixed via stty size checks?
 
 	temp_str="${string//$'\n'/$'\n'${PS2@P}}"
+
 	printf "\e8\e[?25l\e[K"
+
 #	echo -n "$prompt$string"
-	echo -n "$prompt$temp_str"
-	echo -n "$color${post_prompt:${#string}}"
+	echo -n "$prompt$temp_str$color${post_prompt:${#string}}"
 	printf '\e[K\e8'
 	echo -n "$prompt${temp_str:0:$curpos}" # Very wasteful, will cause a speed issue
 	printf '\e[0m\e[?25h'
@@ -264,6 +268,14 @@ ctrl-right() {
 	curpos="${#ctrl_right}"
 }
 
+cursor_move() {
+	case "$mode" in
+		"[C") ((curpos+=1)) ;;
+		"[D") ((curpos-=1)) ;;
+	esac
+	if ((curpos<=0)); then curpos=0; fi
+	if ((curpos>=${#string})); then curpos=${#string}; fi
+}
 
 main_loop() {
 	running=true
@@ -293,14 +305,14 @@ main_loop() {
 			case "$mode" in
 				# Specials
 				"$new_line")	multi_check ;; #reading="false";;
-				"$back_space")	if [[ ${#string} -gt 0 ]] && [[ $curpos -gt 0 ]]; then backspace_from_string; fi ;;
+				"$back_space")	backspace_from_string ;;
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
-				"$tab_char") finish_complete  && curpos=${#string} ;;
+				"$tab_char") 	finish_complete  && curpos=${#string} ;;
 				# Cursor
 				";5C") ctrl-right ;;
-				"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && ((curpos+=1)) ;;
+				"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
 				";5D") ctrl-left ;;
-				"[D") ((curpos-=1)) ;;
+				"[D") cursor_move ;;
 				'[A') hist_up ;;
 				'[B') hist_down ;;
 				# Control characters, may vary by system but idk
@@ -316,8 +328,6 @@ main_loop() {
 				*) 	add_to_string ;;
 			esac
 			color=$c1
-			if [[ "$curpos" -le 0 ]]; then curpos=0; fi
-			if [[ "$curpos" -ge "${#string}" ]]; then ((curpos=${#string})); fi
 			command_completion
 		done
 		printf "\n"
