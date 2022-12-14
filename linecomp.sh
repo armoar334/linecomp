@@ -38,7 +38,7 @@ tab_char=$(printf "\t")
 post_prompt=""
 curpos=0
 suggest=""
-histmax=$(wc -l "$HISTFILE" | cut -d ' ' -f1 )
+histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
 
 read -r -d R p_start < <(printf '\e[6n')
 
@@ -275,7 +275,7 @@ main_loop() {
 		reading="true"
 		prompt="${PS1@P}"
 		string=''
-		histmax=$(( $(wc -l "$HISTFILE" | cut -d ' ' -f1) + 1 ))
+		histmax=$(( $(wc -l "$HISTFILE" | awk '{print $1}') + 1 ))
 		histpos=$histmax
 
 		oldifs=$IFS
@@ -310,10 +310,11 @@ main_loop() {
 				'[B') hist_down ;;
 				# Control characters, may vary by system but idk
 				$'\001') curpos=0 ;;
-				$'\002') ctrl-c ;; # This is a placeholder, the actual thing for \C-c is the SIGINT trap above
+				$'\002') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
 				$'\004') [[ -z "$string" ]] && exit ;;
 				$'\005') curpos=${#string} ;;
-				$'\022') printf '' ;; # History search placeholder
+				# Ctrl sequences (many unknown)
+				$'\022') printf '' ;; # Ctrl r
 				$'\027') string="" ;;
 				# Catch undefined escapes (doesnt work)
 				$'\01'*) printf "C 1 caught" ;;
