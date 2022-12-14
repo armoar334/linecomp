@@ -34,7 +34,6 @@ The only existing readline replacement that achieves my desired results is ble.s
 I mean yeah, i could just use zsh or fish but wheres the fun in that?  
 
 # Todo's ( in order of priority (should probably put somewhere else))
- - Find a fast way to fix the line dupliation issue
  - Multi-line statements with escapes
  - Replace grep with something less susceptible to regex injections / Fix my awful regex's
  - Stop handling history ourselves and use ``history`` for it
