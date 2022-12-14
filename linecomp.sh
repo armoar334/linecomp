@@ -292,8 +292,9 @@ main_loop() {
 			then
 				read -rsn2 mode
 				case "$mode" in # Read 1 more to discard some stuff
-					"[3") read -rsn1 discard ;; # Pg up / down, discard for now
-					"[1") read -rsn3 mode ;; # Ctrl + arrows
+					'[3') read -rsn1 discard ;; # Pg up / down, discard for now
+					'['*''*) printf '' ;;
+					'[1') read -rsn3 mode ;; # Ctrl + arrows
 				esac
 			fi
 			case "$mode" in
@@ -319,6 +320,9 @@ main_loop() {
 				# Catch undefined escapes (doesnt work)
 				$'\01'*) printf "C 1 caught" ;;
 				$'\02'*) printf "C 2 caught" ;;
+				$'\v'*) printf "" ;; # Ctrl k
+				$'\b'*) printf "" ;; # Ctrl h
+				$'\f'*) printf "" ;; # Ctrl l
 				*) 	add_to_string ;;
 			esac
 			color=$c1
@@ -327,7 +331,7 @@ main_loop() {
 		printf "\n"
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
 		stty echo
-		eval "$string" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
+		eval "$string" # I hate this, and you should know that i hate it pls
 		stty -echo
 		history >/dev/null # Trim history according to normal bash
 		printf '\e7'
@@ -342,4 +346,5 @@ commands_get
 stty -echo
 main_loop
 printf "\nlinecomp exited"
+
 
