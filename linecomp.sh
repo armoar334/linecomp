@@ -71,15 +71,12 @@ search_escape() {
 subdir_completion() {
 	search_term=''
 	#if [[ "$two" == "~/"* ]]; then two="${two/~\//$HOME/}"; fi # Fix later
-	if [[ -d "${two%'/'*}" ]]; # Subdirectories
+	if [[ -d "${two%'/'*}" ]] && [[ "$two" == *"/"* ]]; # Subdirectories
 	then
-		if [[ "$two" == *"/"* ]];
-		then
-			folders="${two%'/'*}/"
-			search_term="${two/$folders}"
-			search_escape
-			files="$folders"$(ls "${two%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" )
-		fi
+		folders="${two%'/'*}/"
+		search_term="${two/$folders}"
+		search_escape
+		files="$folders"$(ls "${two%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" )
 	else # Directory in current pwd
 		search_term="$two"
 		search_escape
