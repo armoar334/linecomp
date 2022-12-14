@@ -237,10 +237,7 @@ print_command_line() { # This doesnt technichally need to be a different functio
 	# Line duplication could maybe be fixed via stty size checks?
 
 	printf "\e8\e[?25l\e[K"
-	echo -n "$prompt${string:0:$curpos}"
-#	printf '\e7'
-#	printf "\e[47m\e[30m${string:$curpos:1}\e[0m"
-	echo -n "${string:$curpos}$color${post_prompt:${#string}}"
+	echo -n "$prompt$string$color${post_prompt:${#string}}"
 	printf '\e8'
 	echo -n "$prompt${string:0:$curpos}" # Very wasteful, will cause a speed issue
 	printf '\e[0m\e[?25h'
