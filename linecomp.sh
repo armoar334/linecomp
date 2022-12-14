@@ -54,6 +54,7 @@ commands_get() {
 }
 
 ctrl-c() { # I think how this works in normal bash is that reading the input is a subprocess and Ctrl-c'ing it just kills the process
+	# We have to do a lot of incomplete mimicry
 	echo "^C"
 	string=''
 	suggest=''
@@ -64,7 +65,7 @@ ctrl-c() { # I think how this works in normal bash is that reading the input is 
 
 search_escape() {
 	#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g; s/\\ / /g' <<<"$search_term") # Escape regex chars for grep
-	# This is horribly, awfully inefficient. fix later
+	# ^^ This is horribly, awfully inefficient, luckily its not used but might need again in future so im gonna keep it here
 	search_term="${search_term//\\ / }"
 }
 
@@ -118,9 +119,6 @@ command_suggest()  {
 
 
 command_completion() {
-	# Early work to make pipe completion more modular
-	#check=$(grep -o "\(&\||\|\./\|\.\./\|\$(\| \)" <<<"$string" | tr -d '\n' ) # Im never going to do another regex in my life
-
 	case $(grep -o "\(&\||\|\./\|\.\./\|\$(\| \)" <<<"$string" | tr -d '\n' ) in
 		*"| ") # Pipes
 			one="${string%'|'*}| "
@@ -233,7 +231,6 @@ multi_check() {
 print_command_line() {
 	# This doesnt technichally need to be a different function but it reduced jitteriness to run all of it into a variable and print it all at once
 	# This is slow as a mf (urgent fix)
-	# Line duplication could maybe be fixed via stty size checks?
 
 	temp_str="${string//$'\n'/$'\n'${PS2@P}}"
 
@@ -287,6 +284,7 @@ main_loop() {
 		do
 			printed_var=$(print_command_line)
 			echo -n "$printed_var"
+			#print_command_line
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
@@ -323,10 +321,9 @@ main_loop() {
 				$'\v'*) printf "" ;; # Ctrl k
 				$'\b'*) printf "" ;; # Ctrl h
 				$'\f'*) printf "" ;; # Ctrl l
-				*) 	add_to_string ;;
+				*) 	add_to_string && command_completion ;;
 			esac
 			color=$c1
-			command_completion
 		done
 		printf "\n"
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
