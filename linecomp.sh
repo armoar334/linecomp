@@ -239,7 +239,24 @@ print_command_line() { # This doesnt technichally need to be a different functio
 	printf '\e7'
 	echo -n "${string:$curpos}$color${post_prompt:${#string}}"
 	printf '\e[0m\e[K\e[?25h\e8'
+	#^^^^^^^^^^^^^^^^^^^^^^^^^^ Making this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
+	# Add to target list
 }
+
+ctrl-left() {
+	ctrl_left=$( echo " ${string:0:$curpos}" | rev )
+	ctrl_left=$( echo "${ctrl_left/ /}" | rev )
+	ctrl_left="${ctrl_left%' '*}"
+	curpos="${#ctrl_left}"
+}
+
+ctrl-right() {
+	ctrl_right="${string:$curpos}"
+	ctrl_right="${ctrl_right%' '*}"
+	ctrl_right="${ctrl_right/ /}"
+	curpos="${#ctrl_right}"
+}
+
 
 main_loop() {
 	running=true
@@ -261,10 +278,10 @@ main_loop() {
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
 				read -rsn2 mode
-				if [[ "$mode" == "[3" ]]; # Read 1 more to discard some stuff
-				then
-					read -rsn1 discard
-				fi
+				case "$mode" in # Read 1 more to discard some stuff
+					"[3") read -rsn1 discard ;; # Pg up / down, discard for now
+					"[1") read -rsn3 mode ;; # Ctrl + arrows
+				esac
 			fi
 			case "$mode" in
 				# Specials
@@ -273,7 +290,9 @@ main_loop() {
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") finish_complete  && curpos=${#string} ;;
 				# Cursor
+				";5C") ctrl-right ;;
 				"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && ((curpos+=1)) ;;
+				";5D") ctrl-left ;;
 				"[D") ((curpos-=1)) ;;
 				'[A') hist_up ;;
 				'[B') hist_down ;;
