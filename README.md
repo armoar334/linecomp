@@ -1,5 +1,5 @@
 # linecomp
-A WIP (see: early alpha / POC) readline "replacement" in/for bash  
+A WIP (see: early alpha / POC) readline "replacement" in/for ``bash 4.0+``  
 
 # Why hasnt someone else done this?
 They have! and if we're being honest, the other version of this are far, far ahead.  
