@@ -227,6 +227,7 @@ multi_check() {
 	if [[ "$string" == *'\' ]];
 	then
 		string+=$'\n'
+		((curpos+=1))
 	else
 		reading='false'
 	fi
