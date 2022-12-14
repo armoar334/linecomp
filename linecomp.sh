@@ -70,7 +70,6 @@ search_escape() {
 
 subdir_completion() {
 	search_term=''
-	#if [[ "$two" == "~/"* ]]; then two="${two/~\//$HOME/}"; fi # Fix later
 	if [[ -d "${two%'/'*}" ]] && [[ "$two" == *"/"* ]]; # Subdirectories
 	then
 		folders="${two%'/'*}/"
@@ -224,13 +223,11 @@ finish_complete() {
 }
 
 multi_check() {
-	if [[ "$string" == *'\' ]];
-	then
-		string+=$'\n'
-		((curpos+=1))
-	else
-		reading='false'
-	fi
+	case "$string" in
+		*'\') string+=$'\n'
+			((curpos+=1)) ;;
+		*) reading=false ;;
+	esac
 }
 
 print_command_line() {
@@ -329,7 +326,9 @@ main_loop() {
 		done
 		printf "\n"
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
+		stty echo
 		eval "$string" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
+		stty -echo
 		history >/dev/null # Trim history according to normal bash
 		printf '\e7'
 		IFS=$oldifs
@@ -340,6 +339,7 @@ main_loop() {
 }
 
 commands_get
+stty -echo
 main_loop
 printf "\nlinecomp exited"
 
