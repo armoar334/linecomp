@@ -56,6 +56,8 @@ commands_get() {
 ctrl-c() { # I think how this works in normal bash is that reading the input is a subprocess and Ctrl-c'ing it just kills the process
 	echo "^C"
 	string=''
+	suggest=''
+	post_prompt=''
 	printf '\e[s'
 	print_command_line
 }
@@ -234,11 +236,14 @@ print_command_line() { # This doesnt technichally need to be a different functio
 	# This is slow as a mf (urgent fix)
 	# Line duplication could maybe be fixed via stty size checks?
 
-	printf "\r\e[?25l\e[K"
+	printf "\e8\e[?25l\e[K"
 	echo -n "$prompt${string:0:$curpos}"
-	printf '\e7'
+#	printf '\e7'
+#	printf "\e[47m\e[30m${string:$curpos:1}\e[0m"
 	echo -n "${string:$curpos}$color${post_prompt:${#string}}"
-	printf '\e[0m\e[K\e[?25h\e8'
+	printf '\e8'
+	echo -n "$prompt${string:0:$curpos}" # Very wasteful, will cause a speed issue
+	printf '\e[0m\e[?25h'
 	#^^^^^^^^^^^^^^^^^^^^^^^^^^ Making this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
 	# Add to target list
 }
@@ -317,6 +322,7 @@ main_loop() {
 		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
 		eval "$string" # I hate this, and you should know that i hate it pls ALSO the shell expansion for '\ ' removal could cause edgecase issues
 		history >/dev/null # Trim history according to normal bash
+		printf '\e7'
 		IFS=$oldifs
 		suggest=""
 		post_prompt=""
