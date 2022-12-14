@@ -38,6 +38,7 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
  - Multi-line statements with escapes (works basically, need to do more work on it)
  - Figure out why it runs awful on macos
  - Stop handling history ourselves and use ``history`` for it
+ - Implement using ``bash-completions`` scripts for suggesting parameters
  - Add all remaining emacs bindings
  - start vi mode implementation
  - Config for keybinds instead of hardcoding

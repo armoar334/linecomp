@@ -128,7 +128,7 @@ command_completion() {
 			two="${string##*'| '}"
 			search_term="$two"
 			command_suggest ;;
-		*'$(') # Subshells
+		*'$('|*'$( ') # Subshells
 			one="${string%'$('*}"'$('
 			two="${string##*'$('}"
 			search_term="$two"
@@ -346,6 +346,7 @@ main_loop() {
 commands_get
 stty -echo
 main_loop
+stty echo
 printf "\nlinecomp exited"
 
 
