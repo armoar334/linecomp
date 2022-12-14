@@ -34,7 +34,7 @@ The only existing readline replacement that achieves my desired results is ble.s
 I mean yeah, i could just use zsh or fish but wheres the fun in that?  
 
 # Todo's ( in order of priority (should probably put somewhere else))
- - Multi-line statements with escapes
+ - Multi-line statements with escapes (works basically, need to do more work on it)
  - Replace grep with something less susceptible to regex injections / Fix my awful regex's
  - Stop handling history ourselves and use ``history`` for it
  - Switch all if/else ladders to case statements for speed
