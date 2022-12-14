@@ -238,10 +238,13 @@ print_command_line() {
 	# This is slow as a mf (urgent fix)
 	# Line duplication could maybe be fixed via stty size checks?
 
+	temp_str="${string//$'\n'/$'\n'${PS2@P}}"
 	printf "\e8\e[?25l\e[K"
-	echo -n "$prompt$string$color${post_prompt:${#string}}"
-	printf '\e8'
-	echo -n "$prompt${string:0:$curpos}" # Very wasteful, will cause a speed issue
+#	echo -n "$prompt$string"
+	echo -n "$prompt$temp_str"
+	echo -n "$color${post_prompt:${#string}}"
+	printf '\e[K\e8'
+	echo -n "$prompt${temp_str:0:$curpos}" # Very wasteful, will cause a speed issue
 	printf '\e[0m\e[?25h'
 	#^^^^^^^^^^^^^^^^^^^^Making all of this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
 	# Add to target list
