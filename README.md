@@ -41,5 +41,6 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
  - Add all remaining emacs bindings
  - start vi mode implementation
  - Config for keybinds instead of hardcoding
+ - Stop commiting directly to main (more of a personal note tbh)
 
 Issues / Suggestions more than welcome! (im practically begging actually)
