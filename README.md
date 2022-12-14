@@ -34,13 +34,16 @@ The only existing readline replacement that achieves my desired results is ble.s
 I mean yeah, i could just use zsh or fish but wheres the fun in that?  
 
 # Todo's ( in order of priority (should probably put somewhere else))
+## Todo
  - Multi-line statements with escapes (works basically, need to do more work on it)
- - ~~Replace grep with something less susceptible to regex injections / Fix my awful regex's~~ (not really necessary)
  - Stop handling history ourselves and use ``history`` for it
- - ~~Switch all if/else ladders to case statements for speed~~ (done as much as can be for now)
  - Add all remaining emacs bindings
  - start vi mode implementation
  - Config for keybinds instead of hardcoding
  - Stop commiting directly to main (more of a personal note tbh)
+## Done / very low priority
+ - ~~Replace grep with something less susceptible to regex injections / Fix my awful regex's~~ (not really necessary)
+ - ~~Switch all if/else ladders to case statements for speed~~ (done as much as can be for now)
+
 
 Issues / Suggestions more than welcome! (im practically begging actually)

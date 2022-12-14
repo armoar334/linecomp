@@ -321,7 +321,7 @@ main_loop() {
 				$'\v'*) printf "" ;; # Ctrl k
 				$'\b'*) printf "" ;; # Ctrl h
 				$'\f'*) printf "" ;; # Ctrl l
-				*) 	add_to_string && command_completion ;;
+				*) add_to_string && command_completion ;;
 			esac
 			color=$c1
 		done
