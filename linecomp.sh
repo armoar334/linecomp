@@ -35,7 +35,7 @@ fi
 
 escape_char=$(printf "\u1b")
 new_line=$(printf "\n")
-back_space=$(printf "\177")
+back_space=$(printf $'\177')
 delete_char="[3"
 tab_char=$(printf "\t")
 post_prompt=""
@@ -120,7 +120,6 @@ command_suggest()  {
 	suggest="$one${tabbed%%$'\n'*}"
 }
 
-
 command_completion() {
 	case $(grep -o "\(&\||\|\./\|\.\./\|\$(\| \)" <<<"$string" | tr -d '\n' ) in
 		*"| ") # Pipes
@@ -128,7 +127,7 @@ command_completion() {
 			two="${string##*'| '}"
 			search_term="$two"
 			command_suggest ;;
-		*'$('|*'$( ') # Subshells
+		*'$(') # Subshells
 			one="${string%'$('*}"'$('
 			two="${string##*'$('}"
 			search_term="$two"
@@ -139,9 +138,18 @@ command_completion() {
 			search_term="$two"
 			command_suggest ;;
 		*" "|*'../') # Files/folders/arguments
-			command="${string%%' '*}"
-			one="${string%' '*}"
-			two="${string##*' '}"
+			if [[ "$string" == *'$(' ]];	# Has to do this for parameter subs after pipes and stuff
+			then				# DOnt work yet
+				temp_string="${x##*'$('}"
+			elif [[ "" == *'| ' ]];
+			then
+				temp_string="${x##*'| '}"
+			else
+				temp_string="$string"
+			fi
+			command="${temp_string%%' '*}"
+			one="${temp_string%' '*}"
+			two="${temp_string##*' '}"
 			arg_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
 			suggest="$one $two" ;;
 		*"./") # Executable in current directory
@@ -301,7 +309,7 @@ main_loop() {
 			case "$mode" in
 				# Specials
 				"$new_line")	multi_check ;; #reading="false";;
-				"$back_space")	backspace_from_string ;;
+				"$back_space"|''|'')	backspace_from_string ;;
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") 	finish_complete  && curpos=${#string} ;;
 				# Cursor
