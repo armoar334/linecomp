@@ -224,15 +224,16 @@ finish_complete() {
 }
 
 multi_check() {
-	if [[ "${string:$(( curpos - 1 ))}" == *'\' ]];
+	if [[ "$string" == *'\' ]];
 	then
-		string+="$new_line"
+		string+=$'\n'
 	else
 		reading='false'
 	fi
 }
 
-print_command_line() { # This doesnt technichally need to be a different function but it reduced jitteriness to run all of it into a variable and print it all at once
+print_command_line() {
+	# This doesnt technichally need to be a different function but it reduced jitteriness to run all of it into a variable and print it all at once
 	# This is slow as a mf (urgent fix)
 	# Line duplication could maybe be fixed via stty size checks?
 
@@ -241,7 +242,7 @@ print_command_line() { # This doesnt technichally need to be a different functio
 	printf '\e8'
 	echo -n "$prompt${string:0:$curpos}" # Very wasteful, will cause a speed issue
 	printf '\e[0m\e[?25h'
-	#^^^^^^^^^^^^^^^^^^^^^^^^^^ Making this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
+	#^^^^^^^^^^^^^^^^^^^^Making all of this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
 	# Add to target list
 }
 
