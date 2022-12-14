@@ -216,7 +216,7 @@ hist_search() {
 }
 
 finish_complete() {
-	if [[ "${#post_prompt}" -gt 1 ]];
+	if [[ ! -z "${post_prompt:${#string}}" ]];
 	then
 		string="$post_prompt"
 		curpos=${#string}
