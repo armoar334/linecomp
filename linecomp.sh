@@ -5,13 +5,16 @@
 # arguments for command in ~/.local/share/linecomp.txt with syntax
 # git add,push,commit,etc
 
-#
 # ABANDON ALL HOPE YE WHO ENTER HERE!
 # If you inted to commit code, i hope you have the patience of a saint, because
 # I am NOT a good programmer, and i'm an even worse social programmer
 # Style guides? no
 # Consistent and readable comments? You wish!
 
+# ALSO although it __is__ open contribution, its a personal project really
+# (and idk how git works), so stuff may not be merged in a timely manner
+#FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+# ^^^^ dont worry about this, its just an 80 column ruler
 
 # Check that current shell is bash
 if [[ "$(ps -p $$)" != *"bash"* ]];
