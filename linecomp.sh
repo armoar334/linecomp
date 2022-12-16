@@ -16,6 +16,13 @@
 #FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 # ^^^^ dont worry about this, its just an 80 column ruler
 
+
+
+
+# Run history to setup $HIST* envs
+history
+
+
 # Check that current shell is bash
 if [[ "$(ps -p $$)" != *"bash"* ]];
 then
@@ -231,6 +238,11 @@ finish_complete() {
 	fi
 }
 
+multi_line_prompt() {
+	printf 'placeholder'
+}
+
+
 multi_check() {
 	case "$string" in
 		*"EOM"*"EOM"*|*"EOF"*"EOF"*) reading=false ;;
@@ -339,10 +351,15 @@ main_loop() {
 			color=$c1
 		done
 		printf "\n"
-		if ! [[ -z "$string" ]]; then echo "$string" >> "$HISTFILE"; fi
+		if ! [[ -z "$string" ]]; then echo "${string//$'\n'/; }" >> "$HISTFILE"; fi
+		# Pretend stuff just works
+
+		set -o history
 		stty echo
 		eval "$string" # I hate this, and you should know that i hate it pls
 		stty -echo
+		set +o history
+
 		history >/dev/null # Trim history according to normal bash
 		printf '\e7'
 		IFS=$oldifs
