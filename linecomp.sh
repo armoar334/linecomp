@@ -338,14 +338,15 @@ main_loop() {
 				$'\004') [[ -z "$string" ]] && exit ;;
 				$'\005') curpos=${#string} ;;
 				# Ctrl sequences (many unknown)
-				$'\022') printf '' ;; # Ctrl r
+				$'\017') reading=0 ;; # Ctrl O
+				$'\022') printf '' ;; # Ctrl R
 				$'\027') string="" ;;
 				# Catch undefined escapes (doesnt work)
 				$'\01'*) printf "C 1 caught" ;;
 				$'\02'*) printf "C 2 caught" ;;
-				$'\v'*) printf "" ;; # Ctrl k
-				$'\b'*) printf "" ;; # Ctrl h
-				$'\f'*) printf "" ;; # Ctrl l
+				$'\v'*) printf "" ;; # Ctrl K
+				$'\b'*) printf "" ;; # Ctrl H
+				$'\f'*) printf "" ;; # Ctrl L
 				*) add_to_string && command_completion ;;
 			esac
 			color=$c1
