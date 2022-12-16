@@ -98,7 +98,7 @@ arg_completion() {
 	files=''
 	search_term="$command"
 	search_escape
-	args=$(cat ~/.local/share/linecomp.txt | grep -v '^#' | grep -- '^'"$search_term" | cut -d ' ' -f2 | tr ',' '\n' )
+	args=$(grep -v '^#' ~/.local/share/linecomp.txt | grep -- '^'"$search_term" | cut -d ' ' -f2 | tr ',' '\n' )
 	if [[ "$args" == *'$commands'* ]];
 	then
 		args="$commands"
