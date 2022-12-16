@@ -263,7 +263,9 @@ print_command_line() {
 #	echo -n "$prompt$string"
 	echo -n "$prompt$temp_str$color${post_prompt:${#string}}"
 	printf '\e[K\e8'
+	#newline_count=$(grep -c $'\n' <<<"${string:0:$curpos}")
 	echo -n "$prompt${temp_str:0:$curpos}" # Very wasteful, will cause a speed issue
+			# ^^^^^^^^ Its cut by temp_str so cursor displacement is from the 1 char \n becoming a 2 char '> '
 	printf '\e[0m\e[?25h'
 	#^^^^^^^^^^^^^^^^^^^^Making all of this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
 	# Add to target list
