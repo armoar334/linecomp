@@ -111,7 +111,7 @@ arg_completion() {
 
 	search_term="$two"
 	search_escape
-	all=$(printf "$args\n$files" | grep -m 1 '^'"$search_term" )
+	all=$(printf "$args\n$files" | grep -m 1 '^'"$search_term" ) # Printf isnt useless, need for \n
 	two="${all%%$'\n'*}"
 }
 
@@ -233,7 +233,8 @@ finish_complete() {
 
 multi_check() {
 	case "$string" in
-		*'\') string+=$'\n'
+		*"EOM"*"EOM"*|*"EOF"*"EOF"*) reading=false ;;
+		*'\'|*"EOM"*|*"EOF"*) string+=$'\n'
 			((curpos+=1)) ;;
 		*) reading=false ;;
 	esac
