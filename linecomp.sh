@@ -360,7 +360,6 @@ main_loop() {
 		stty -echo
 		set +o history
 
-		history >/dev/null # Trim history according to normal bash
 		printf '\e7'
 		IFS=$oldifs
 		suggest=""
