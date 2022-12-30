@@ -76,6 +76,7 @@ ctrl-c() { # I think how this works in normal bash is that reading the input is 
 search_escape() {
 	#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g; s/\\ / /g' <<<"$search_term") # Escape regex chars for grep
 	# ^^ This is horribly, awfully inefficient, luckily its not used but might need again in future so im gonna keep it here
+	#search_term=$(sed 's/[^a-zA-Z 0-9]/\\&/g' <<<"$search_term")
 	search_term="${search_term//\\ / }"
 }
 
@@ -93,6 +94,7 @@ subdir_completion() {
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" )
 	fi
 	files="${files%%$'\n'*}/"
+	files=$(printf '%q' "$files")
 	files="${files// /\\ }" # Fix files with spaces
 	if ! [[ -d "$files" ]] || [[ -z "$files" ]]; # Remove / if not directory or string empty
 	then
