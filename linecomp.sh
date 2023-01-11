@@ -74,10 +74,7 @@ ctrl-c() { # I think how this works in normal bash is that reading the input is 
 }
 
 search_escape() {
-	#search_term=$(sed 's/[^^]/[&]/g; s/\^/\\^/g; s/\\ / /g' <<<"$search_term") # Escape regex chars for grep
-	# ^^ This is horribly, awfully inefficient, luckily its not used but might need again in future so im gonna keep it here
-	#search_term=$(sed 's/[^a-zA-Z 0-9]/\\&/g' <<<"$search_term")
-	search_term="${search_term//\\ / }"
+	search_term=$(printf '%q' "$search_term" )
 }
 
 subdir_completion() {
@@ -102,25 +99,29 @@ subdir_completion() {
 	fi
 }
 
+bash_completions() { # Stolen from https://unix.stackexchange.com/questions/25935/how-to-output-string-completions-to-stdout
+	# Need to make all this faster if possible
+	COMP_LINE="$*"
+	COMP_WORDS=("$@")
+	COMP_CWORD=${#COMP_WORDS[@]}
+	((COMP_CWORD--))
+	COMP_POINT=${#COMP_LINE}
+	COMP_WORDBREAKS='"'"'><=;|&(:"
+	_command_offset 0
+}
+
 arg_completion() {
 	args=''
 	files=''
 	search_term="$command"
 	search_escape
-	args=$(grep -v '^#' ~/.local/share/linecomp.txt | grep -- '^'"$search_term" | cut -d ' ' -f2 | tr ',' '\n' )
-	if [[ "$args" == *'$commands'* ]];
-	then
-		args="$commands"
-	fi
-	if [[ "$args" == *'$files'* ]] || [[ -z "$arg" ]]; # if command isnt listed or has files enabled as suggestions then add subdir
-	then
-		args="${args//'$files'/}"
-		subdir_completion
-	fi
-
+	subdir_completion
+	#bash_completions "$command" "$two"
+	#args="${COMPREPLY[@]}"
+	#args="${args// /$'\n'}"
 	search_term="$two"
 	search_escape
-	all=$(printf "$args\n$files" | grep -m 1 '^'"$search_term" ) # Printf isnt useless, need for \n
+	all=$(printf "$args\n$files" | grep -- $search_term ) # Printf isnt useless, need for \n
 	two="${all%%$'\n'*}"
 }
 
@@ -130,7 +131,8 @@ command_suggest()  {
 }
 
 command_completion() {
-	case $(grep -o "\(&\||\|\./\|\.\./\|\$(\| \)" <<<"$string" | tr -d '\n' ) in
+	pure_sep=$(grep -o "\(&\||\|\./\|\.\./\|\$(\| \\|\\\ \)" <<<"$string" | tr -d '\n' )
+	case "$pure_sep" in
 		*"| ") # Pipes
 			one="${string%'|'*}| "
 			two="${string##*'| '}"
@@ -146,20 +148,22 @@ command_completion() {
 			two="${string##*'& '}"
 			search_term="$two"
 			command_suggest ;;
+		*'\\') # Files/Folders with escaped characters
+			printf 'dont fucking work fucking cunt bastard fuck cunt bastard' ;;
 		*" "|*'../') # Files/folders/arguments
-			if [[ "$string" == *'$(' ]];	# Has to do this for parameter subs after pipes and stuff
+			if [[ "$pure_sep" == *'$(' ]];	# Has to do this for parameter subs after pipes and stuff
 			then				# DOnt work yet
-				temp_string="${x##*'$('}"
-			elif [[ "" == *'| ' ]];
+				temp_string="${string##*'$('}"
+			elif [[ "$pure_sep" == *'| '* ]];
 			then
-				temp_string="${x##*'| '}"
+				temp_string="${string##*'| '}"
 			else
 				temp_string="$string"
 			fi
 			command="${temp_string%%' '*}"
 			one="${temp_string%' '*}"
 			two="${temp_string##*' '}"
-			arg_completion 2>/dev/null # Just throws grep errors away, they mostly dont  break anything anyway (stuff with [ in the filename wont get suggested but thats such an edge case that idc)
+			arg_completion 2>/dev/null # Just throws grep errors away, they mostly dont break anything anyway
 			suggest="$one $two" ;;
 		*"./") # Executable in current directory
 			one="${string%'./'*}./"
@@ -240,11 +244,6 @@ finish_complete() {
 	fi
 }
 
-multi_line_prompt() {
-	printf 'placeholder'
-}
-
-
 multi_check() {
 	case "$string" in
 		*"EOM"*"EOM"*|*"EOF"*"EOF"*) reading=false ;;
@@ -259,7 +258,6 @@ print_command_line() {
 	# This is slow as a mf (urgent fix)
 
 	temp_str="${string//$'\n'/$'\n'${PS2@P}}"
-
 	printf "\e8\e[?25l\e[K"
 
 #	echo -n "$prompt$string"
