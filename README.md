@@ -17,7 +17,7 @@ Some readline shortcuts re-implemented
 # Goals [percentages are estiamtes]
 Feature parity with GNU Readline - ~50%  
 Feature parity with bash-completions - ~25%  
-bash-completions integration - ~2%
+bash-completions integration - ~2%  
 Vi mode + keybindings - 0%  (don't personally use so might never implement)
 
 # Why
