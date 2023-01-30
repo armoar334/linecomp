@@ -57,10 +57,6 @@ done
 
 printf '\e7'
 
-commands_get() {
-	commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
-}
-
 ctrl-c() { # I think how this works in normal bash is that reading the input is a subprocess and Ctrl-c'ing it just kills the process
 	# We have to do a lot of incomplete mimicry
 	echo "^C"
@@ -75,6 +71,7 @@ search_escape() {
 	search_term=$(printf '%q' "$search_term" )
 }
 
+# Keeping this bc its still good
 subdir_completion() {
 	search_term=''
 	if [[ -d "${two%'/'*}" ]] && [[ "$two" == *"/"* ]]; # Subdirectories
@@ -97,87 +94,54 @@ subdir_completion() {
 	fi
 }
 
-bash_completions() { # Stolen from https://unix.stackexchange.com/questions/25935/how-to-output-string-completions-to-stdout
-	# Need to make all this faster if possible
-	COMP_LINE="$*"
-	COMP_WORDS=("$@")
-	COMP_CWORD=${#COMP_WORDS[@]}
-	((COMP_CWORD--))
+bash_completions() {
+	# Stolen from https://brbsix.github.io/2015/11/29/accessing-tab-completion-programmatically-in-bash/
+	local completion COMP_CWORD COMP_LINE COMP_POINT COMP_WORDS COMPREPLY=()
+
+	# load bash-completion if necessary
+	declare -F _completion_loader &>/dev/null || {
+		source /usr/share/bash-completion/bash_completion
+	}
+
+	COMP_LINE=$*
 	COMP_POINT=${#COMP_LINE}
-	COMP_WORDBREAKS='"'"'><=;|&(:"
-	_command_offset 0
-}
 
-arg_completion() {
-	args=''
-	files=''
-	search_term="$command"
-	search_escape
-	subdir_completion
-	#bash_completions "$command" "$two"
-	#args="${COMPREPLY[@]}"
-	#args="${args// /$'\n'}"
-	search_term="$two"
-	search_escape
-	all=$(printf "$args\n$files" | grep -- $search_term ) # Printf isnt useless, need for \n
-	two="${all%%$'\n'*}"
-}
+	eval set -- "$@"
 
-command_suggest()  {
-	tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # grep errors
-	suggest="$one${tabbed%%$'\n'*}"
+	COMP_WORDS=("$@")
+
+	# add '' to COMP_WORDS if the last character of the command line is a space
+	[[ ${COMP_LINE[@]: -1} = ' ' ]] && COMP_WORDS+=('')
+
+	# index of the last word
+	COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
+
+	# determine completion function
+	completion=$(complete -p "$1" 2>/dev/null | awk '{print $(NF-1)}')
+
+	# run _completion_loader only if necessary
+	[[ -n $completion ]] || {
+		# load completion
+		_completion_loader "$1"
+		# detect completion
+		completion=$(complete -p "$1" 2>/dev/null | awk '{print $(NF-1)}')
+	}
+
+	# ensure completion was detected
+	[[ -n $completion ]] || return 1
+
+	# execute completion function
+	"$completion"
+
+	# print completions to stdout
+	printf '%s\n' "${COMPREPLY[@]}"
 }
 
 command_completion() {
-	pure_sep=$(grep -o "\(&\||\|\./\|\.\./\|\$(\| \\|\\\ \)" <<<"$string" | tr -d '\n' )
-	case "$pure_sep" in
-		*"| ") # Pipes
-			one="${string%'|'*}| "
-			two="${string##*'| '}"
-			search_term="$two"
-			command_suggest ;;
-		*'$(') # Subshells
-			one="${string%'$('*}"'$('
-			two="${string##*'$('}"
-			search_term="$two"
-			command_suggest ;;
-		*"& ") # Ands
-			one="${string%'& '*}& "
-			two="${string##*'& '}"
-			search_term="$two"
-			command_suggest ;;
-		*'\\') # Files/Folders with escaped characters
-			printf 'dont fucking work fucking cunt bastard fuck cunt bastard' ;;
-		*" "|*'../') # Files/folders/arguments
-			if [[ "$pure_sep" == *'$(' ]];	# Has to do this for parameter subs after pipes and stuff
-			then				# DOnt work yet
-				temp_string="${string##*'$('}"
-			elif [[ "$pure_sep" == *'| '* ]];
-			then
-				temp_string="${string##*'| '}"
-			else
-				temp_string="$string"
-			fi
-			command="${temp_string%%' '*}"
-			one="${temp_string%' '*}"
-			two="${temp_string##*' '}"
-			arg_completion 2>/dev/null # Just throws grep errors away, they mostly dont break anything anyway
-			suggest="$one $two" ;;
-		*"./") # Executable in current directory
-			one="${string%'./'*}./"
-			two="${string##*'./'}"
-			arg_completion
-			color=$c2
-			suggest="$one$two" ;;
-		*) # Globally available commands
-			search_term="$string"
-			tabbed=$(grep -F "$search_term" <<<"${commands[@]}")" " 2>/dev/null # Same here
-			suggest="${tabbed%%$'\n'*}" ;;
-	esac
-	if ! [[ -z "$string" ]];
-	then
-		post_prompt="$suggest"
-	fi
+	args=$(bash_completions $string 2>/dev/null)
+	all="${args%%$'\n'*}"
+	suggest="${string%% *} $all"
+	post_prompt="$suggest"
 }
 
 add_to_string() {
@@ -259,7 +223,7 @@ print_command_line() {
 	printf '\e[K\e8'
 	newline_count=$(grep -c $'\n' <<<"${string:0:$curpos}")
 	cur_temp=$((curpos + $(( newline_count * 2 )) ))
-	echo -n "$prompt${temp_str:0:$cur_temp}" # Very wasteful, will cause a speed issue
+	echo -n "$prompt${temp_str:0:$curpos}" # Very wasteful, will cause a speed issue
 			# ^^^^^^^^ Its cut by temp_str so cursor displacement is from the 1 char \n becoming a 2 char '> '
 	printf '\e[0m\e[?25h'
 	#^^^^^^^^^^^^^^^^^^^^Making all of this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
@@ -290,8 +254,8 @@ cursor_move() {
 }
 
 main_loop() {
-	running=true
-	while [[ $running == true ]];
+	comp_running=true
+	while [[ $comp_running == true ]];
 	do
 		reading="true"
 		prompt="${PS1@P}"
@@ -366,7 +330,6 @@ main_loop() {
 	done
 }
 
-commands_get
 stty -echo
 main_loop
 stty echo
