@@ -2,8 +2,6 @@
 
 # linecomp
 # readline "replacment" for bash
-# arguments for command in ~/.local/share/linecomp.txt with syntax
-# git add,push,commit,etc
 
 # ABANDON ALL HOPE YE WHO ENTER HERE!
 # If you inted to commit code, i hope you have the patience of a saint, because
@@ -232,10 +230,6 @@ hist_up() {
 	post_prompt="$suggest"
 }
 
-hist_search() {
-	printf ''
-}
-
 finish_complete() {
 	if [[ ! -z "${post_prompt:${#string}}" ]];
 	then
@@ -263,8 +257,9 @@ print_command_line() {
 #	echo -n "$prompt$string"
 	echo -n "$prompt$temp_str$color${post_prompt:${#string}}"
 	printf '\e[K\e8'
-	#newline_count=$(grep -c $'\n' <<<"${string:0:$curpos}")
-	echo -n "$prompt${temp_str:0:$curpos}" # Very wasteful, will cause a speed issue
+	newline_count=$(grep -c $'\n' <<<"${string:0:$curpos}")
+	cur_temp=$((curpos + $(( newline_count * 2 )) ))
+	echo -n "$prompt${temp_str:0:$cur_temp}" # Very wasteful, will cause a speed issue
 			# ^^^^^^^^ Its cut by temp_str so cursor displacement is from the 1 char \n becoming a 2 char '> '
 	printf '\e[0m\e[?25h'
 	#^^^^^^^^^^^^^^^^^^^^Making all of this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
