@@ -136,14 +136,16 @@ bash_completions() {
 }
 
 command_completion() {
-	args=$(bash_completions $string 2>/dev/null)
-	args="${args// /$'\n'}"
-	all="${args%%$'\n'*}"
-#	if [[ -z "${args// }" ]];
-#	then
-#		all='emty :('
-#	fi
-	suggest="${string%% *} $all"
+	case "$string" in
+	*' '*)
+		args=$(bash_completions $string 2>/dev/null)
+		args="${args// /$'\n'}"
+		all="${args%%$'\n'*}"
+		suggest="${string%% *} $all" ;;
+	*)
+		suggest=$(echo "$commands" | grep -F "$string")
+		suggest="${suggest%%$'\n'*}";;
+	esac
 	post_prompt="$suggest"
 }
 
@@ -334,6 +336,7 @@ main_loop() {
 	done
 }
 
+commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
 stty -echo
 main_loop
 stty echo
