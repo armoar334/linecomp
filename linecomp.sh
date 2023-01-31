@@ -14,12 +14,8 @@
 #FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 # ^^^^ dont worry about this, its just an 80 column ruler
 
-
-
-
 # Run history to setup $HIST* envs
 history
-
 
 # Check that current shell is bash
 if [[ "$(ps -p $$)" != *"bash"* ]];
@@ -71,9 +67,10 @@ search_escape() {
 	search_term=$(printf '%q' "$search_term" )
 }
 
-# Keeping this bc its still good
+# Keeping this bc its still good for when bash-completions doesnt know what to do
 subdir_completion() {
 	search_term=''
+	two="${string# *}"
 	if [[ -d "${two%'/'*}" ]] && [[ "$two" == *"/"* ]]; # Subdirectories
 	then
 		folders="${two%'/'*}/"
@@ -95,6 +92,7 @@ subdir_completion() {
 }
 
 bash_completions() {
+	# This works but bash completions is always slow and can be incredibly obtuse, maybe add an option to disable
 	# Stolen from https://brbsix.github.io/2015/11/29/accessing-tab-completion-programmatically-in-bash/
 	local completion COMP_CWORD COMP_LINE COMP_POINT COMP_WORDS COMPREPLY=()
 
@@ -139,7 +137,12 @@ bash_completions() {
 
 command_completion() {
 	args=$(bash_completions $string 2>/dev/null)
+	args="${args// /$'\n'}"
 	all="${args%%$'\n'*}"
+#	if [[ -z "${args// }" ]];
+#	then
+#		all='emty :('
+#	fi
 	suggest="${string%% *} $all"
 	post_prompt="$suggest"
 }
@@ -308,7 +311,8 @@ main_loop() {
 				$'\v'*) printf "" ;; # Ctrl K
 				$'\b'*) printf "" ;; # Ctrl H
 				$'\f'*) printf "" ;; # Ctrl L
-				*) add_to_string && command_completion ;;
+				[a-zA-Z0-9]) add_to_string && command_completion ;; # Only autocomplete on certain characters for performance
+				*) add_to_string ;;
 			esac
 			color=$c1
 		done
