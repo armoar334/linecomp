@@ -3,8 +3,11 @@ A WIP (see: early alpha / POC) readline "replacement" in/for ``bash 4.0+``
 
 # Why hasnt someone else done this?
 They have! and if we're being honest, the other version of this are far, far ahead.  
-One of the big reasons is seniority and support. This awful amalgam of stackexchange snippets is a __very__ new project, and it hasnt even got feature parity with the default readline as on now, let alone that of bash-completions of other completion packages.  
-Hopefully as the developemnt continues
+One of the big reasons is seniority and support. This is a pretty new project, and it hasnt even got feature parity with the default readline as on now.  
+
+##31/01/23
+We now have support for `bash-completions`!  
+Unfortunately its a little slow, but that should be fixed in the coming weeks  
 
 # usage
 source linecomp.sh at the end of your bashrc, and add linecomp.txt in ~/.local/share. This is for custom command completion  
