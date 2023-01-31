@@ -26,6 +26,7 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
 
 # Todo's ( in order of priority (should probably put somewhere else))
 ## Todo
+ - Figure out why and prevent bash-completions from freezing the prompt when it encounters an issue
  - Multi-line statements with escapes (works basically, need to do more work on it)
  - Add all remaining emacs bindings
  - start vi mode implementation
