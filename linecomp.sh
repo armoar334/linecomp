@@ -95,29 +95,29 @@ subdir_completion() {
 bash_completions() {
 	# This works but bash completions is always slow and can be incredibly obtuse, maybe add an option to disable
 	# Based on https://brbsix.github.io/2015/11/29/accessing-tab-completion-programmatically-in-bash/
+	# This just refuses to load most completions, redo HIGH PRIORITY
+	local comp_con COMP_CWORD COMP_LINE COMP_POINT COMP_WORDS COMPREPLY=()
+
+	source /usr/share/bash-completion/bash_completion
+
 	COMP_LINE=$*
 	COMP_POINT=${#COMP_LINE}
 
 	eval set -- "$@"
 
 	COMP_WORDS=("$@")
-
 	[[ ${COMP_LINE[@]: -1} = ' ' ]] && COMP_WORDS+=('')
-
 	COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
 
-	completion=$(complete -p "$1" 2>/dev/null | awk '{print $(NF-1)}')
+	comp_com=$(complete -p "$1" | awk '{print $(NF-1)}')
 
-	if ! [[ -n $completion ]];
+	if [[ -z "$comp_com" ]];
 	then
 		_completion_loader "$1"
-		completion=$(complete -p "$1" 2>/dev/null | awk '{print $(NF-1)}')
+		comp_com=$(complete -p "$1" | awk '{print $(NF-1)}')
 	fi
 
-	# ensure completion was detected
-	if ! [[ -n $completion ]]; then return 1; fi
-
-	"$completion"
+	"$comp_com"
 
 	printf '%s\n' "${COMPREPLY[@]}"
 }
@@ -323,11 +323,6 @@ main_loop() {
 		curpos=0
 	done
 }
-
-if [[ -e /usr/share/bash-completion/bash_completion ]];
-then
-	source /usr/share/bash-completion/bash_completion
-fi
 
 commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
 stty -echo
