@@ -140,7 +140,7 @@ command_completion() {
 	*' '*)
 		args=$(bash_completions $string 2>/dev/null)
 		args="${args// /$'\n'}"
-		suggest="${string%% *} ${args%%$'\n'*}" ;;
+		suggest="${string% *} ${args%%$'\n'*}" ;;
 	*)
 		suggest=$(echo "$commands" | grep -F "$string")
 		suggest="${suggest%%$'\n'*}";;
@@ -335,7 +335,6 @@ main_loop() {
 	done
 }
 
-export -f bash_completions
 commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
 stty -echo
 main_loop
