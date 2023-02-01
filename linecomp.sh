@@ -94,6 +94,7 @@ subdir_completion() {
 
 bash_completions() {
 	# This works but bash completions is always slow and can be incredibly obtuse, maybe add an option to disable
+	# Based on https://brbsix.github.io/2015/11/29/accessing-tab-completion-programmatically-in-bash/
 	COMP_LINE=$*
 	COMP_POINT=${#COMP_LINE}
 
