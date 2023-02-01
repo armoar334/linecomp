@@ -15,7 +15,7 @@
 # ^^^^ dont worry about this, its just an 80 column ruler
 
 # Run history to setup $HIST* envs
-history
+#history
 
 # Check that current shell is bash
 # This works under zsh and crashes out on fish, so p much serves its purpose
