@@ -18,6 +18,7 @@
 history
 
 # Check that current shell is bash
+# This works under zsh and crashes out on fish, so p much serves its purpose
 if [[ "$(ps -p $$)" != *"bash"* ]];
 then
 	echo "Your current shell is not bash!"
@@ -70,7 +71,7 @@ search_escape() {
 # Keeping this bc its still good for when bash-completions doesnt know what to do
 subdir_completion() {
 	search_term=''
-	two="${string# *}"
+	two="${string#* }"
 	if [[ -d "${two%'/'*}" ]] && [[ "$two" == *"/"* ]]; # Subdirectories
 	then
 		folders="${two%'/'*}/"
@@ -82,9 +83,9 @@ subdir_completion() {
 		search_escape
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" )
 	fi
-	files="${files%%$'\n'*}/"
+	files="${files%%$'\n'*}" # THis looks more wasteful than it is
 	files=$(printf '%q' "$files")
-	files="${files// /\\ }" # Fix files with spaces
+	files="$files/" # Fix files with spaces
 	if ! [[ -d "$files" ]] || [[ -z "$files" ]]; # Remove / if not directory or string empty
 	then
 		files="${files:0:-1}"
@@ -139,7 +140,9 @@ command_completion() {
 	case "$string" in
 	*' '*)
 		args=$(bash_completions $string 2>/dev/null)
-		args="${args// /$'\n'}"
+		subdir_completion 2>/dev/null
+		args="$files"$'\n'"$args"
+		args=$(grep -F "${string#* }" <<<"$args")
 		suggest="${string% *} ${args%%$'\n'*}" ;;
 	*)
 		suggest=$(echo "$commands" | grep -F "$string")
