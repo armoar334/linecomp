@@ -94,14 +94,6 @@ subdir_completion() {
 
 bash_completions() {
 	# This works but bash completions is always slow and can be incredibly obtuse, maybe add an option to disable
-	# Stolen from https://brbsix.github.io/2015/11/29/accessing-tab-completion-programmatically-in-bash/
-	local completion COMP_CWORD COMP_LINE COMP_POINT COMP_WORDS COMPREPLY=()
-
-	# load bash-completion if necessary
-	declare -F _completion_loader &>/dev/null || {
-		source /usr/share/bash-completion/bash_completion
-	}
-
 	COMP_LINE=$*
 	COMP_POINT=${#COMP_LINE}
 
@@ -109,30 +101,23 @@ bash_completions() {
 
 	COMP_WORDS=("$@")
 
-	# add '' to COMP_WORDS if the last character of the command line is a space
 	[[ ${COMP_LINE[@]: -1} = ' ' ]] && COMP_WORDS+=('')
 
-	# index of the last word
 	COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
 
-	# determine completion function
 	completion=$(complete -p "$1" 2>/dev/null | awk '{print $(NF-1)}')
 
-	# run _completion_loader only if necessary
-	[[ -n $completion ]] || {
-		# load completion
+	if ! [[ -n $completion ]];
+	then
 		_completion_loader "$1"
-		# detect completion
 		completion=$(complete -p "$1" 2>/dev/null | awk '{print $(NF-1)}')
-	}
+	fi
 
 	# ensure completion was detected
-	[[ -n $completion ]] || return 1
+	if ! [[ -n $completion ]]; then return 1; fi
 
-	# execute completion function
 	"$completion"
 
-	# print completions to stdout
 	printf '%s\n' "${COMPREPLY[@]}"
 }
 
@@ -337,6 +322,11 @@ main_loop() {
 		curpos=0
 	done
 }
+
+if [[ -e /usr/share/bash-completion/bash_completion ]];
+then
+	source /usr/share/bash-completion/bash_completion
+fi
 
 commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
 stty -echo
