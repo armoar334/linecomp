@@ -142,7 +142,7 @@ command_completion() {
 		args=$(bash_completions $string 2>/dev/null)
 		subdir_completion 2>/dev/null
 		args="$files"$'\n'"$args"
-		args=$(grep -F "${string#* }" <<<"$args")
+		args=$(grep -F -- "${string#* }" <<<"$args")
 		suggest="${string% *} ${args%%$'\n'*}" ;;
 	*)
 		suggest=$(echo "$commands" | grep -F "$string")
