@@ -128,7 +128,8 @@ command_completion() {
 		args=$(grep -F -- "${string#* }" <<<"$args")
 		suggest="${string% *} ${args%%$'\n'*}" ;;
 	*)
-		suggest=$(echo "$commands" | grep -F "$string")
+		subdir_completion 2>/dev/null
+		suggest=$(echo "$commands"$'\n'"$files" | grep -F "$string")
 		suggest="${suggest%%$'\n'*}";;
 	esac
 	post_prompt="$suggest"
