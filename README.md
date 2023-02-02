@@ -20,8 +20,8 @@ Some readline shortcuts re-implemented
 # Goals [percentages are estiamtes]
 Feature parity with GNU Readline - ~50%  
 Feature parity with bash-completions - ~25%  
-bash-completions integration - ~95% (fully working, just slow)
-Vi mode + keybindings - 0%  (don't personally use so might never implement)
+bash-completions integration - ~95% (partially working, just slow)  
+Vi mode + keybindings - 0%  (don't personally use so might never implement)  
 
 # Why
 The only existing readline replacement that achieves my desired results is ble.sh, and as much of a feat as it is, I felt like perhaps it could be a fun project to re-implement. As a result, I began to implement my own line-editor, and thats what linecomp has become since  
