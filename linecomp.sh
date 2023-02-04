@@ -96,8 +96,7 @@ subdir_completion() {
 
 man_completion() {
 	command_one="${string%% *}"
-	man_args=$(cat '/usr/share/man/man'*'/'"$command_one"* | tr ' ' $'\n' | tr '\' $'\n' | grep '^-' | \
-	sort -u | sed -e '/,$/d' -e '/\.$/d' -e 's/\-\-/\n\-\-/g')
+	man_args=$(man "$command_one" | col -b | tr ' ' $'\n' | sed -e '/,$/d' -e '/\.$/d' -e '/:$/d'| grep '^-' )
 }
 
 command_completion() {
