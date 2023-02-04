@@ -73,15 +73,15 @@ history_completion() {
 
 subdir_completion() {
 	search_term=''
-	two="${string##* }"
-	if [[ -d "${two%'/'*}" ]] && [[ "$two" == *"/"* ]]; # Subdirectories
+	dir_suggest="${string##* }"
+	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]]; # Subdirectories
 	then
-		folders="${two%'/'*}/"
-		search_term="${two/$folders}"
+		folders="${dir_suggest%'/'*}/"
+		search_term="${dir_suggest/$folders}"
 		search_escape
-		files="$folders"$(ls "${two%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
+		files="$folders"$(ls "${dir_suggest%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
 	else # Directory in current pwd
-		search_term="$two"
+		search_term="$dir_suggest"
 		search_escape
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
 	fi
@@ -260,6 +260,7 @@ main_loop() {
 				# Cursor
 				*';5C') ctrl-right ;;
 				*';5D') ctrl-left ;;
+				*';'*'A'|*';'*'B'|*';'*'C'|*';'*'D') printf '' ;; # Non-ctrl arrow modifiers
 				"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
 				"[D") cursor_move ;;
 				'[A') hist_up ;;
@@ -279,7 +280,7 @@ main_loop() {
 				$'\v'*) printf "" ;; # Ctrl K
 				$'\b'*) printf "" ;; # Ctrl H
 				$'\f'*) printf "" ;; # Ctrl L
-				'['*) printf '' ;; # discard unknown
+				'['[:alpha:]|'['[0-9]) printf '' ;; # discard unknown
 				[a-zA-Z0-9]) add_to_string && command_completion ;; # Only autocomplete on certain characters for performance
 				*) add_to_string ;;
 			esac
