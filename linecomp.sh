@@ -74,11 +74,11 @@ subdir_completion() {
 		folders="${two%'/'*}/"
 		search_term="${two/$folders}"
 		search_escape
-		files="$folders"$(ls "${two%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" )
+		files="$folders"$(ls "${two%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
 	else # Directory in current pwd
 		search_term="$two"
 		search_escape
-		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" )
+		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
 	fi
 	files="${files%%$'\n'*}" # THis looks more wasteful than it is
 	files=$(printf '%q' "$files")
@@ -125,7 +125,7 @@ command_completion() {
 		args=$(bash_completions $string 2>/dev/null)
 		subdir_completion 2>/dev/null
 		args="$files"$'\n'"$args"
-		args=$(grep -F -- "${string#* }" <<<"$args")
+		args=$(grep -F -- "${string##* }" <<<"$args")
 		suggest="${string% *} ${args%%$'\n'*}" ;;
 	*)
 		subdir_completion 2>/dev/null
