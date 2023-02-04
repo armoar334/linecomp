@@ -96,7 +96,7 @@ subdir_completion() {
 
 man_completion() {
 	command_one="${string%% *}"
-	man_args=$(man "$command_one" | col -b | tr ' ' $'\n' | sed -e '/,$/d' -e '/\.$/d' -e '/:$/d'| grep '^-' )
+	man_args=$(man "$command_one" | col -b | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep '^-' )
 }
 
 command_completion() {
