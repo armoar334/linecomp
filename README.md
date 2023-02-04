@@ -28,6 +28,9 @@ The only existing readline replacement that achieves my desired results is ble.s
 I mean yeah, i could just use zsh or fish but wheres the fun in that?  
 
 # Todo's ( in order of priority (should probably put somewhere else))
+## URGENT
+ - Workaround for bash-completions freezing, as its basically a random fork bomb (high priority, but it shouldnt be my place to fix it tbh)
+
 ## Todo
  - Figure out why and prevent bash-completions from freezing the prompt when it encounters an issue
  - Multi-line statements with escapes (works basically, need to do more work on it)
