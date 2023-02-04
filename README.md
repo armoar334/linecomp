@@ -29,7 +29,7 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
 
 # Todo's ( in order of priority (should probably put somewhere else))
 ## URGENT
- - Workaround for bash-completions freezing, as its basically a random fork bomb (high priority, but it shouldnt be my place to fix it tbh)
+ - Re-implement ``bash-completions``. It was previously implemented, however as it was slow, unreliable and not even guaranteed to work, i have decided to move to a manpage parsing approach. This is also not yet completely working, but as it is far faster and more reliable than bash-completions (not to mention technichally closer to how fish does it), this will be the primary approach for the time being.  
 
 ## Todo
  - Figure out why and prevent bash-completions from freezing the prompt when it encounters an issue
