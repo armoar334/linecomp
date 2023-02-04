@@ -65,10 +65,15 @@ search_escape() {
 	search_term=$(printf '%q' "$search_term" )
 }
 
-# Keeping this bc its still good for when bash-completions doesnt know what to do
+history_completion() {
+	history_args=$(cat "$HISTFILE" | tac | grep -m 1 -F "$string")
+	history_args="${history_args%%$'\n'*}"
+	history_args="${history_args/$string}"
+}
+
 subdir_completion() {
 	search_term=''
-	two="${string#* }"
+	two="${string##* }"
 	if [[ -d "${two%'/'*}" ]] && [[ "$two" == *"/"* ]]; # Subdirectories
 	then
 		folders="${two%'/'*}/"
@@ -89,47 +94,27 @@ subdir_completion() {
 	fi
 }
 
-bash_completions() {
-	# This works but bash completions is always slow and can be incredibly obtuse, maybe add an option to disable
-	# Based on https://brbsix.github.io/2015/11/29/accessing-tab-completion-programmatically-in-bash/
-	# This just refuses to load most completions, redo HIGH PRIORITY
-	local comp_con COMP_CWORD COMP_LINE COMP_POINT COMP_WORDS COMPREPLY=()
-
-	source /usr/share/bash-completion/bash_completion
-
-	COMP_LINE=$*
-	COMP_POINT=${#COMP_LINE}
-
-	eval set -- "$@"
-
-	COMP_WORDS=("$@")
-	[[ ${COMP_LINE[@]: -1} = ' ' ]] && COMP_WORDS+=('')
-	COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
-
-	comp_com=$(complete -p "$1" | awk '{print $(NF-1)}')
-
-	if [[ -z "$comp_com" ]];
-	then
-		_completion_loader "$1"
-		comp_com=$(complete -p "$1" | awk '{print $(NF-1)}')
-	fi
-
-	"$comp_com"
-
-	printf '%s\n' "${COMPREPLY[@]}"
+man_completion() {
+	command_one="${string%% *}"
+	man_args=$(cat '/usr/share/man/man'*'/'"$command_one"* | tr ' ' $'\n' | tr '\' $'\n' | grep '^-' | sort -u | sed -e '/,$/d' -e '/\.$/d')
 }
 
 command_completion() {
 	case "$string" in
-	*' '*)
-		args=$(bash_completions $string 2>/dev/null)
+	*' '|*' '*)
+		if [[ "${string##* }" == '-'* ]];
+		then
+			man_completion 2>/dev/null
+		fi
 		subdir_completion 2>/dev/null
-		args="$files"$'\n'"$args"
-		args=$(grep -F -- "${string##* }" <<<"$args")
-		suggest="${string% *} ${args%%$'\n'*}" ;;
+		args="$files"$'\n'"$man_args"
+		args=$(grep -F -m1 -- "${string##* }" <<<"$args")
+		suggest="${string% *} $args" ;;
 	*)
 		subdir_completion 2>/dev/null
-		suggest=$(echo "$commands"$'\n'"$files" | grep -F "$string")
+		history_completion 2>/dev/null
+		args="$history_args"$'\n'"$files"$'\n'"$commands"
+		suggest=$(grep -F -- "${string##* }" <<<"$args")
 		suggest="${suggest%%$'\n'*}";;
 	esac
 	post_prompt="$suggest"
@@ -310,7 +295,7 @@ main_loop() {
 
 		set -o history
 		stty echo
-		eval "$string" # I hate this, and you should know that i hate it pls
+		eval -- "$string" # I hate this, and you should know that i hate it pls
 		stty -echo
 		set +o history
 
