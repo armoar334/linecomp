@@ -96,7 +96,7 @@ subdir_completion() {
 
 man_completion() {
 	command_one="${string%% *}"
-	man_args=$(man "$command_one" | col -b | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep '^-' )
+	man_args=$(man "$command_one" | col -bx | grep '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep '^-' )
 }
 
 command_completion() {
@@ -205,17 +205,15 @@ print_command_line() {
 }
 
 ctrl-left() {
-	ctrl_left=$( echo " ${string:0:$curpos}" | rev )
-	ctrl_left=$( echo "${ctrl_left/ /}" | rev )
-	ctrl_left="${ctrl_left%' '*}"
-	curpos="${#ctrl_left}"
+	ctrl_left="${string:0:$curpos}"
+	ctrl_left="${ctrl_left% *}"
+	curpos="$(( ${#ctrl_left} ))"
 }
 
 ctrl-right() {
-	ctrl_right="${string:$curpos}"
-	ctrl_right="${ctrl_right%' '*}"
-	ctrl_right="${ctrl_right/ /}"
-	curpos="${#ctrl_right}"
+	ctrl_right="${string:$(( curpos + 1 ))} "
+	ctrl_right="${ctrl_right#* }"
+	curpos="$(( ${#string} - ${#ctrl_right} ))"
 }
 
 cursor_move() {
@@ -250,7 +248,6 @@ main_loop() {
 				read -rsn2 mode
 				case "$mode" in # Read 1 more to discard some stuff
 					'[3') read -rsn1 discard ;; # Pg up / down, discard for now
-					'['*''*) printf '' ;;
 					'[1') read -rsn3 mode ;; # Ctrl + arrows
 				esac
 			fi
@@ -261,9 +258,9 @@ main_loop() {
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				"$tab_char") 	finish_complete  && curpos=${#string} ;;
 				# Cursor
-				";5C") ctrl-right ;;
+				*';5C') ctrl-right ;;
+				*';5D') ctrl-left ;;
 				"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
-				";5D") ctrl-left ;;
 				"[D") cursor_move ;;
 				'[A') hist_up ;;
 				'[B') hist_down ;;
@@ -282,6 +279,7 @@ main_loop() {
 				$'\v'*) printf "" ;; # Ctrl K
 				$'\b'*) printf "" ;; # Ctrl H
 				$'\f'*) printf "" ;; # Ctrl L
+				'['*) printf '' ;; # discard unknown
 				[a-zA-Z0-9]) add_to_string && command_completion ;; # Only autocomplete on certain characters for performance
 				*) add_to_string ;;
 			esac
