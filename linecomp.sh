@@ -102,10 +102,7 @@ man_completion() {
 command_completion() {
 	case "$string" in
 	*' '|*' '*)
-		if [[ "${string##* }" == '-'* ]];
-		then
-			man_completion 2>/dev/null
-		fi
+		man_completion 2>/dev/null
 		subdir_completion 2>/dev/null
 		history_completion 2>/dev/null
 		args="$history_args"$'\n'"$files"$'\n'"$man_args"
