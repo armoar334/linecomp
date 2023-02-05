@@ -66,9 +66,9 @@ search_escape() {
 }
 
 history_completion() {
-	history_args=$(cat "$HISTFILE" | tac | grep -m 1 -F "$string")
+	history_args=$(cat "$HISTFILE" | tac | grep -m1 -F "$string")
 	history_args="${history_args%%$'\n'*}"
-	history_args="${history_args/$string}"
+	history_args="${history_args##* }"
 }
 
 subdir_completion() {
@@ -241,7 +241,6 @@ main_loop() {
 		do
 			printed_var=$(print_command_line)
 			echo -n "$printed_var"
-			#print_command_line
 			read -rsn1 mode
 			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
 			then
@@ -281,7 +280,7 @@ main_loop() {
 				$'\b'*) printf "" ;; # Ctrl H
 				$'\f'*) printf "" ;; # Ctrl L
 				'['[:alpha:]|'['[0-9]) printf '' ;; # discard unknown
-				[a-zA-Z0-9]) add_to_string && command_completion ;; # Only autocomplete on certain characters for performance
+				[a-zA-Z0-9]) add_to_string &&  command_completion ;; # Only autocomplete on certain characters for performance
 				*) add_to_string ;;
 			esac
 			color=$c1
