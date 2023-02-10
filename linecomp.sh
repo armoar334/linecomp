@@ -96,7 +96,7 @@ subdir_completion() {
 
 man_completion() {
 	command_one="${string%% *}"
-	man_args=$(man "$command_one" | col -bx | grep '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep '^-' )
+	man_args=$(man "$command_one" | col -bx | grep '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-' )
 }
 
 command_completion() {
@@ -206,13 +206,13 @@ print_command_line() {
 
 ctrl-left() {
 	ctrl_left="${string:0:$curpos}"
-	ctrl_left="${ctrl_left% *}"
+	ctrl_left="${ctrl_left%[^[:alnum:]]*}"
 	curpos="$(( ${#ctrl_left} ))"
 }
 
 ctrl-right() {
 	ctrl_right="${string:$(( curpos + 1 ))} "
-	ctrl_right="${ctrl_right#* }"
+	ctrl_right="${ctrl_right#*[^[:alnum:]]}"
 	curpos="$(( ${#string} - ${#ctrl_right} ))"
 }
 
