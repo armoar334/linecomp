@@ -7,11 +7,12 @@ A WIP (see: early alpha / POC) readline "replacement" in/for ``bash 4.0+``
 This has been removed temporarily in favor of a faster, more reliable manpage-based approach  
 
 # usage
-source linecomp.sh at the end of your bashrc, and add linecomp.txt in ~/.local/share. This is for custom command completion  
-if it ever breaks something _really_ bad, you can set the variable ``running`` to anything other than ``true``  
+source linecomp.sh at the end of your bashrc, and add linecomp.txt in ~/.local/share  
 
 # Features
-Subdirectory / Directory completion  
+Subdirectory / Directory suggestion  
+Command option suggestion  
+History based suggestion  
 Some readline shortcuts re-implemented  
 
 # Goals [percentages are estiamtes]
