@@ -16,7 +16,6 @@ Some readline shortcuts re-implemented
 
 # Goals [percentages are estiamtes]
 Feature parity with GNU Readline - ~50%  
-~~bash-completions integration~~ - ~95% (partially working, just slow)  
 Vi mode + keybindings - 0%  (don't personally use so might never implement)  
 
 # Why
@@ -38,7 +37,7 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
 ## Done / very low priority
  - ~~Replace grep with something less susceptible to regex injections / Fix my awful regex's~~ (not really necessary)
  - ~~Switch all if/else ladders to case statements for speed~~ (done as much as can be for now)
- - ~~Implement using ``bash-completions`` scripts for suggesting parameters~~ (done, but still __really__ slow)
+ - ~~Implement using ``bash-completions`` scripts for suggesting parameters~~ ~~(done, but still __really__ slow)~~ (re-implement at a later date)
  - ~~Figure out why it runs awful on macos~~ (nvm its just the terminal)
  - ~~Stop handling history ourselves and use ``history`` for it~~ (did this ages ago and forgot to change)
 
