@@ -1,5 +1,5 @@
 # linecomp
-A WIP (see: early alpha / POC) readline "replacement" in/for ``bash 4.0+``  
+Beta readline replacement and command suggestion in/for ``bash 4.0+``  
 
 ~~##31/01/23~~
 ~~We now have support for `bash-completions`!~~  
