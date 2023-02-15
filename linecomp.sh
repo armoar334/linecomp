@@ -87,7 +87,7 @@ subdir_completion() {
 		search_escape
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
 	fi
-	files="${files%%$'\n'*}" # THis looks more wasteful than it is
+	files="${files%%$'\n'*}"
 	files=$(printf '%q' "$files")
 	files="$files/" # Fix files with spaces
 	if ! [[ -d "$files" ]] || [[ -z "$files" ]]; # Remove / if not directory or string empty
@@ -200,7 +200,7 @@ print_command_line() {
 	newline_count=$(grep -c $'\n' <<<"${string:0:$curpos}")
 	cur_temp=$((curpos + $(( newline_count * 2 )) ))
 	echo -n "$prompt${temp_str:0:$curpos}" # Very wasteful, will cause a speed issue
-			# ^^^^^^^^ Its cut by temp_str so cursor displacement is from the 1 char \n becoming a 2 char '> '
+			# ^^^^^^^^ Its cut by temp_str so cursor displacement is from the 1 char \n becoming $PS2
 	printf '\e[0m\e[?25h'
 	#^^^^^^^^^^^^^^^^^^^^Making all of this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
 	# Add to target list
@@ -209,7 +209,7 @@ print_command_line() {
 ctrl-left() {
 	ctrl_left="${string:0:$curpos}"
 	ctrl_left="${ctrl_left%[^[:alnum:]]*}"
-	curpos="$(( ${#ctrl_left} ))"
+	curpos="${#ctrl_left}"
 }
 
 ctrl-right() {
