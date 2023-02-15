@@ -31,7 +31,6 @@ then
 	HISTFILE="~/.bash_history"
 fi
 
-
 escape_char=$(printf "\u1b")
 new_line=$(printf "\n")
 back_space=$(printf $'\177')
@@ -76,12 +75,17 @@ history_completion() {
 subdir_completion() {
 	search_term=''
 	dir_suggest="${string##* }"
-	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]]; # Subdirectories
+	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]]; # Subdirectories or pwd
 	then
 		folders="${dir_suggest%'/'*}/"
 		search_term="${dir_suggest/$folders}"
 		search_escape
 		files="$folders"$(ls "${dir_suggest%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
+	elif [[ "$dir_suggest" == "/"* ]];
+	then
+		search_term="${dir_suggest/\/}"
+		search_escape
+		files=$(ls / | grep -v '\.$' | grep -- '^'"$search_term" | sort -n | sed 's/^/\//g')
 	else # Directory in current pwd
 		search_term="$dir_suggest"
 		search_escape
