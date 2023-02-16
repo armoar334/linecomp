@@ -65,7 +65,7 @@ search_escape() {
 }
 
 history_completion() {
-	history_args=$(cat "$HISTFILE" | tac | grep -m1 -F "$string")
+	history_args=$(cat "$HISTFILE" | tac | grep -m1 '^'"$string")
 	history_args="${history_args%%$'\n'*}"
 	rem_str="${string% *}"
 	history_args="${history_args/$rem_str}"
