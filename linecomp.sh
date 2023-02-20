@@ -252,43 +252,40 @@ main_loop() {
 			then
 				read -rsn2 mode
 				case "$mode" in # Read 1 more to discard some stuff
-					'[3') read -rsn1 discard ;; # Pg up / down, discard for now
-					'[1') read -rsn3 mode ;; # Ctrl + arrows
+					# Cursor
+					'[1')	# Ctrl + arrows
+						read -rsn3 mode
+						case "$mode" in
+							';5C') ctrl-right ;;
+							';5D') ctrl-left ;;
+							';'*'A'|*';'*'B'|*';'*'C'|*';'*'D') printf '' ;; # Non-ctrl arrow modifiers
+						esac ;;
+					"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
+					"[D") cursor_move ;;
+					'[A') hist_up ;;
+					'[B') hist_down ;;
+				esac
+			else
+				case "$mode" in
+					# Specials
+					"$new_line")	multi_check ;; #reading="false";;
+					"$back_space"|''|'')	backspace_from_string ;;
+					"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
+					"$tab_char") 	finish_complete  && curpos=${#string} ;;
+					# Control characters, may vary by system but idk
+					$'\001') curpos=0 ;;
+					$'\002') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
+					$'\004') [[ -z "$string" ]] && exit ;;
+					$'\005') curpos=${#string} ;;
+					# Ctrl sequences (many unknown)
+					$'\017') reading=0 ;; # Ctrl O
+					$'\022') printf '' ;; # Ctrl R
+					$'\027') string="" ;;
+					'['[:alpha:]|'['[0-9]) printf '' ;; # discard unknown
+					[a-zA-Z0-9]) add_to_string &&  command_completion ;; # Only autocomplete on certain characters for performance
+					*) add_to_string ;;
 				esac
 			fi
-			case "$mode" in
-				# Specials
-				"$new_line")	multi_check ;; #reading="false";;
-				"$back_space"|''|'')	backspace_from_string ;;
-				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
-				"$tab_char") 	finish_complete  && curpos=${#string} ;;
-				# Cursor
-				*';5C') ctrl-right ;;
-				*';5D') ctrl-left ;;
-				*';'*'A'|*';'*'B'|*';'*'C'|*';'*'D') printf '' ;; # Non-ctrl arrow modifiers
-				"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
-				"[D") cursor_move ;;
-				'[A') hist_up ;;
-				'[B') hist_down ;;
-				# Control characters, may vary by system but idk
-				$'\001') curpos=0 ;;
-				$'\002') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
-				$'\004') [[ -z "$string" ]] && exit ;;
-				$'\005') curpos=${#string} ;;
-				# Ctrl sequences (many unknown)
-				$'\017') reading=0 ;; # Ctrl O
-				$'\022') printf '' ;; # Ctrl R
-				$'\027') string="" ;;
-				# Catch undefined escapes (doesnt work)
-				$'\01'*) printf "C 1 caught" ;;
-				$'\02'*) printf "C 2 caught" ;;
-				$'\v'*) printf "" ;; # Ctrl K
-				$'\b'*) printf "" ;; # Ctrl H
-				$'\f'*) printf "" ;; # Ctrl L
-				'['[:alpha:]|'['[0-9]) printf '' ;; # discard unknown
-				[a-zA-Z0-9]) add_to_string &&  command_completion ;; # Only autocomplete on certain characters for performance
-				*) add_to_string ;;
-			esac
 			color=$c1
 		done
 		printf "\n"
