@@ -65,7 +65,7 @@ search_escape() {
 }
 
 history_completion() {
-	history_args=$(cat "$HISTFILE" | tac | grep -m1 '^'"$string")
+	history_args=$( < "$HISTFILE" tac | grep -m1 '^'"$string")
 	history_args="${history_args%%$'\n'*}"
 	rem_str="${string% *}"
 	history_args="${history_args/$rem_str}"
@@ -102,7 +102,7 @@ subdir_completion() {
 
 man_completion() {
 	command_one="${string%% *}"
-	man_args=$(man "$command_one" | col -bx | grep '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-' )
+	man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-' )
 }
 
 command_completion() {
