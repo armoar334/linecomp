@@ -264,11 +264,12 @@ main_loop() {
 					"[D") cursor_move ;;
 					'[A') hist_up ;;
 					'[B') hist_down ;;
+					'['[:alpha:]|'['[0-9]) printf '' ;; # discard unknown
 				esac
 			else
 				case "$mode" in
 					# Specials
-					"$new_line")	multi_check ;; #reading="false";;
+					"$new_line")	multi_check ;;
 					"$back_space"|''|'')	backspace_from_string ;;
 					"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 					"$tab_char") 	finish_complete  && curpos=${#string} ;;
@@ -281,7 +282,6 @@ main_loop() {
 					$'\017') reading=0 ;; # Ctrl O
 					$'\022') printf '' ;; # Ctrl R
 					$'\027') string="" ;;
-					'['[:alpha:]|'['[0-9]) printf '' ;; # discard unknown
 					[a-zA-Z0-9]) add_to_string &&  command_completion ;; # Only autocomplete on certain characters for performance
 					*) add_to_string ;;
 				esac
