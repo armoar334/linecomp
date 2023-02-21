@@ -31,11 +31,9 @@ then
 	HISTFILE="~/.bash_history"
 fi
 
-escape_char=$(printf "\u1b")
 new_line=$(printf "\n")
 back_space=$(printf $'\177')
 delete_char="[3"
-tab_char=$(printf "\t")
 post_prompt=""
 curpos=0
 suggest=""
@@ -270,9 +268,12 @@ main_loop() {
 							case "$mode" in
 								';5C') next-word ;;
 								';5D') prev-word ;;
-								';'*'A'|*';'*'B'|*';'*'C'|*';'*'D') printf '' ;; # Non-ctrl arrow modifiers
 							esac ;;
-						*) printf '' ;; # discard unknown
+						'[3')
+							if [[ ${#string} -gt 0 ]]; then
+								del_from_string
+							fi
+							read -rsn1 _ ;; # Get rid of ~ after delete
 					esac ;;
 				# Ctrl characters
 				$'\ca') curpos=0 ;;
@@ -282,9 +283,9 @@ main_loop() {
 				$'\co') reading=0 ;; # Ctrl O
 				$'\c'*) printf '' ;;
 				# Rest
-				"$newline") multi_check ;;
 				$'\t') finish_complete && curpos=${#string} ;;
-				"$back_space"|''|'')	backspace_from_string ;;
+				''|'') backspace_from_string ;;
+				"$newline") multi_check ;; # $'\n' doesnt work idk y
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				*) add_to_string && command_completion ;;
 			esac
