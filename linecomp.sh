@@ -210,13 +210,13 @@ print_command_line() {
 	# Add to target list
 }
 
-ctrl-left() {
+prev-word() {
 	ctrl_left="${string:0:$curpos}"
 	ctrl_left="${ctrl_left%[^[:alnum:]]*}"
 	curpos="${#ctrl_left}"
 }
 
-ctrl-right() {
+next-word() {
 	ctrl_right="${string:$(( curpos + 1 ))} "
 	ctrl_right="${ctrl_right#*[^[:alnum:]]}"
 	curpos="$(( ${#string} - ${#ctrl_right} ))"
@@ -256,8 +256,8 @@ main_loop() {
 					'[1')	# Ctrl + arrows
 						read -rsn3 mode
 						case "$mode" in
-							';5C') ctrl-right ;;
-							';5D') ctrl-left ;;
+							';5C') next-word ;;
+							';5D') prev-word ;;
 							';'*'A'|*';'*'B'|*';'*'C'|*';'*'D') printf '' ;; # Non-ctrl arrow modifiers
 						esac ;;
 					"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
