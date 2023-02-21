@@ -274,13 +274,13 @@ main_loop() {
 					"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 					"$tab_char") 	finish_complete  && curpos=${#string} ;;
 					# Control characters, may vary by system but idk
-					$'\001') curpos=0 ;;
-					$'\002') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
-					$'\004') [[ -z "$string" ]] && exit ;;
-					$'\005') curpos=${#string} ;;
+					$'\ca') curpos=0 ;;
+					$'\cc') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
+					$'\cd') [[ -z "$string" ]] && exit ;;
+					$'\ce') curpos=${#string} ;;
 					# Ctrl sequences (many unknown)
-					$'\017') reading=0 ;; # Ctrl O
-					$'\022') printf '' ;; # Ctrl R
+					$'\co') reading=0 ;; # Ctrl O
+					$'\cr') printf '' ;; # Ctrl R
 					$'\027') string="" ;;
 					[a-zA-Z0-9]) add_to_string &&  command_completion ;; # Only autocomplete on certain characters for performance
 					*) add_to_string ;;
