@@ -50,7 +50,9 @@ done
 
 printf '\e7'
 
-ctrl-c() { # I think how this works in normal bash is that reading the input is a subprocess and Ctrl-c'ing it just kills the process
+ctrl-c() {
+	# I think how this works in normal bash is that reading
+	# the input is a subprocess and Ctrl-c'ing it just kills the process
 	# We have to do a lot of incomplete mimicry
 	echo "^C"
 	string=''
@@ -75,7 +77,8 @@ history_completion() {
 subdir_completion() {
 	search_term=''
 	dir_suggest="${string##* }"
-	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]]; # Subdirectories or pwd
+	# Subdirectories or pwd
+	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]];
 	then
 		folders="${dir_suggest%'/'*}/"
 		search_term="${dir_suggest/$folders}"
@@ -94,7 +97,8 @@ subdir_completion() {
 	files="${files%%$'\n'*}"
 	files=$(printf '%q' "$files")
 	files="$files/" # Fix files with spaces
-	if ! [[ -d "$files" ]] || [[ -z "$files" ]]; # Remove / if not directory or string empty
+	# Remove / if not directory or string empty
+	if ! [[ -d "$files" ]] || [[ -z "$files" ]];
 	then
 		files="${files:0:-1}"
 	fi
@@ -192,21 +196,24 @@ multi_check() {
 }
 
 print_command_line() {
-	# This doesnt technichally need to be a different function but it reduced jitteriness to run all of it into a variable and print it all at once
+	# This doesnt technichally need to be a different function but it
+	# reduced jitter to run it all into a variable and print all at once
 	# This is slow as a mf (urgent fix)
 
 	temp_str="${string//$'\n'/$'\n'${PS2@P}}"
 	printf "\e8\e[?25l\e[K"
 
-#	echo -n "$prompt$string"
 	echo -n "$prompt$temp_str$color${post_prompt:${#string}}"
 	printf '\e[K\e8'
-	newline_count=$(grep -c $'\n' <<<"${string:0:$curpos}")
-	cur_temp=$((curpos + $(( newline_count * 2 )) ))
-	echo -n "$prompt${temp_str:0:$curpos}" # Very wasteful, will cause a speed issue
-			# ^^^^^^^^ Its cut by temp_str so cursor displacement is from the 1 char \n becoming $PS2
+	echo -n "$prompt"
+
+	# Very wasteful, will cause a speed issue
+	temp_str="${string:0:$curpos}"
+	echo -n "${temp_str//$'\n'/$'\n'${PS2@P}}"
+
 	printf '\e[0m\e[?25h'
-	#^^^^^^^^^^^^^^^^^^^^Making all of this a one-liner would be heaven for performance, unfortunately its pretty hard if not impossible
+	# Making all of this a one-liner would be heaven for performance,
+	# unfortunately its pretty hard if not impossible
 	# Add to target list
 }
 
@@ -248,48 +255,43 @@ main_loop() {
 			printed_var=$(print_command_line)
 			echo -n "$printed_var"
 			read -rsn1 mode
-			if [[ "$mode" == "$escape_char" ]]; # Stuff like arrow keys etc
-			then
-				read -rsn2 mode
-				case "$mode" in # Read 1 more to discard some stuff
-					# Cursor
-					'[1')	# Ctrl + arrows
-						read -rsn3 mode
-						case "$mode" in
-							';5C') next-word ;;
-							';5D') prev-word ;;
-							';'*'A'|*';'*'B'|*';'*'C'|*';'*'D') printf '' ;; # Non-ctrl arrow modifiers
-						esac ;;
-					"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
-					"[D") cursor_move ;;
-					'[A') hist_up ;;
-					'[B') hist_down ;;
-					'['[:alpha:]|'['[0-9]) printf '' ;; # discard unknown
-				esac
-			else
-				case "$mode" in
-					# Specials
-					"$new_line")	multi_check ;;
-					"$back_space"|''|'')	backspace_from_string ;;
-					"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
-					"$tab_char") 	finish_complete  && curpos=${#string} ;;
-					# Control characters, may vary by system but idk
-					$'\ca') curpos=0 ;;
-					$'\cc') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
-					$'\cd') [[ -z "$string" ]] && exit ;;
-					$'\ce') curpos=${#string} ;;
-					# Ctrl sequences (many unknown)
-					$'\co') reading=0 ;; # Ctrl O
-					$'\cr') printf '' ;; # Ctrl R
-					$'\027') string="" ;;
-					[a-zA-Z0-9]) add_to_string &&  command_completion ;; # Only autocomplete on certain characters for performance
-					*) add_to_string ;;
-				esac
-			fi
+			case "$mode" in
+				# Escape characters
+				$'\e')
+					read -rsn2 mode
+					case "$mode" in # Read 1 more to discard some stuff
+						# Cursor
+						"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
+						"[D") cursor_move ;;
+						'[A') hist_up ;;
+						'[B') hist_down ;;
+						'[1')	# Ctrl + arrows
+							read -rsn3 mode
+							case "$mode" in
+								';5C') next-word ;;
+								';5D') prev-word ;;
+								';'*'A'|*';'*'B'|*';'*'C'|*';'*'D') printf '' ;; # Non-ctrl arrow modifiers
+							esac ;;
+						*) printf '' ;; # discard unknown
+					esac ;;
+				# Ctrl characters
+				$'\ca') curpos=0 ;;
+				$'\cc') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
+				$'\cd') [[ -z "$string" ]] && exit ;;
+				$'\ce') curpos=${#string} ;;
+				$'\co') reading=0 ;; # Ctrl O
+				$'\c'*) printf '' ;;
+				# Rest
+				"$newline") multi_check ;;
+				$'\t') finish_complete && curpos=${#string} ;;
+				"$back_space"|''|'')	backspace_from_string ;;
+				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
+				*) add_to_string && command_completion ;;
+			esac
 			color=$c1
 		done
 		printf "\n"
-		if ! [[ -z "$string" ]]; then echo "${string//$'\n'/; }" >> "$HISTFILE"; fi
+		if ! [[ -z "$string" ]]; then echo "${string//\\$'\n'/}" >> "$HISTFILE"; fi
 		# Pretend stuff just works
 
 		set -o history
