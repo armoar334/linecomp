@@ -29,13 +29,13 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
 
 ## Todo
  - Figure out why and prevent bash-completions from freezing the prompt when it encounters an issue
- - Multi-line statements with escapes (works basically, need to do more work on it)
- - Add all remaining emacs bindings
+ - Add all remaining readline functions
  - start vi mode implementation
- - Config for keybinds instead of hardcoding
- - Stop commiting directly to main (more of a personal note tbh)
+ - Grab keybinds from env instead of hardcoding
 
 ## Done / very low priority
+ - ~~Stop commiting directly to main (more of a personal note tbh)~~ (You cant make me)
+ - ~~Multi-line statements with escapes (works basically, need to do more work on it)~~ (Done, but slow)
  - ~~Replace grep with something less susceptible to regex injections / Fix my awful regex's~~ (not really necessary)
  - ~~Switch all if/else ladders to case statements for speed~~ (done as much as can be for now)
  - ~~Implement using ``bash-completions`` scripts for suggesting parameters~~ ~~(done, but still __really__ slow)~~ (re-implement at a later date)
