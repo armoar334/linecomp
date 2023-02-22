@@ -39,8 +39,6 @@ curpos=0
 suggest=""
 histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
 
-read -r -d R p_start < <(printf '\e[6n')
-
 for code in {0..7}
 do
 	declare c$code=$(printf "\e[3"$code"m")
@@ -104,7 +102,13 @@ subdir_completion() {
 
 man_completion() {
 	command_one="${string%% *}"
-	man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-' )
+	if [[ "${string##* }" == '-'* ]]; # IK there are commands that dont start with this but thats for later
+	then
+		man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-' | uniq)
+		# tested on a few things. SSD's work fine, but on my X230 w/ HDD
+		# This take 0.2 seconds each time, or which 0.013 is the sorting
+		# 0.190 IS MAN, WHY
+	fi
 }
 
 command_completion() {
@@ -185,6 +189,7 @@ finish_complete() {
 }
 
 multi_check() {
+	#need to make this less suck
 	case "$string" in
 		*"EOM"*"EOM"*|*"EOF"*"EOF"*) reading=false ;;
 		*'\'|*"EOM"*|*"EOF"*) string+=$'\n'
@@ -198,16 +203,16 @@ print_command_line() {
 	# reduced jitter to run it all into a variable and print all at once
 	# This is slow as a mf (urgent fix)
 
-	temp_str="${string//$'\n'/$'\n'${PS2@P}}"
+	temp_str="${string//$'\n'/$'\n'$PS2exp}"
 	printf "\e8\e[?25l\e[K"
 
 	echo -n "$prompt$temp_str$color${post_prompt:${#string}}"
 	printf '\e[K\e8'
 	echo -n "$prompt"
 
-	# Very wasteful, will cause a speed issue
+	# Very wasteful, runs like dog ass
 	temp_str="${string:0:$curpos}"
-	echo -n "${temp_str//$'\n'/$'\n'${PS2@P}}"
+	echo -n "${temp_str//$'\n'/$'\n'$PS2exp}"
 
 	printf '\e[0m\e[?25h'
 	# Making all of this a one-liner would be heaven for performance,
@@ -242,6 +247,7 @@ main_loop() {
 	do
 		reading="true"
 		prompt="${PS1@P}"
+		PS2exp="${PS2@P}"
 		string=''
 		histmax=$(( $(wc -l "$HISTFILE" | awk '{print $1}') + 1 ))
 		histpos=$histmax
@@ -280,11 +286,11 @@ main_loop() {
 				$'\cc') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
 				$'\cd') [[ -z "$string" ]] && exit ;;
 				$'\ce') curpos=${#string} ;;
-				$'\co') reading=0 ;; # Ctrl O
+				$'\c?'|$'\ch') backspace_from_string ;;
+				$'\co') reading=0 ;;
 				$'\c'*) printf '' ;;
 				# Rest
 				$'\t') finish_complete && curpos=${#string} ;;
-				''|'') backspace_from_string ;;
 				"$newline") multi_check ;; # $'\n' doesnt work idk y
 				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
 				*) add_to_string && command_completion ;;
