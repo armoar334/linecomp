@@ -10,7 +10,7 @@ This has been removed temporarily in favor of a faster, more reliable manpage-ba
 # usage
 source linecomp.sh at the end of your bashrc, and add linecomp.txt in ~/.local/share  
 I WOULD ADVISE AGAINST USING THIS ON A HARD DISK
-If bash-completions is already slow for you, seek times will make this almost unbearable
+Its usable in my experience, but still a bit slow
 
 # Features
 Subdirectory / Directory suggestion  
