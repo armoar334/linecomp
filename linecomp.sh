@@ -106,8 +106,8 @@ man_completion() {
 	then
 		man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-' | uniq)
 		# tested on a few things. SSD's work fine, but on my X230 w/ HDD
-		# This take 0.2 seconds each time, or which 0.013 is the sorting
-		# 0.190 IS MAN, WHY
+		# This take 0.2 seconds each, of which 0.013 is the sorting
+		# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
 	fi
 }
 
@@ -288,7 +288,7 @@ main_loop() {
 				$'\ce') curpos=${#string} ;;
 				$'\c?'|$'\ch') backspace_from_string ;;
 				$'\co') reading=0 ;;
-				$'\c'*) printf '' ;;
+				$'\c'*) printf '' ;; # This is redundant, ctrl codes cant be wildcarded
 				# Rest
 				$'\t') finish_complete && curpos=${#string} ;;
 				"$newline") multi_check ;; # $'\n' doesnt work idk y
