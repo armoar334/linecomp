@@ -16,7 +16,7 @@
 
 # Check that current shell is bash
 # This works under zsh and crashes out on fish, so p much serves its purpose
-if [[ "$(ps -p $$)" != *"bash"* ]];
+if [[ "$0" != *"bash"* ]];
 then
 	echo "Your current shell is not bash!"
 	echo "Many features will not work!"
