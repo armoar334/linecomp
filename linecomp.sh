@@ -201,23 +201,16 @@ multi_check() {
 print_command_line() {
 	# This doesnt technichally need to be a different function but it
 	# reduced jitter to run it all into a variable and print all at once
-	# This is slow as a mf (urgent fix)
 
 	temp_str="${string//$'\n'/$'\n'$PS2exp}"
 	printf "\e8\e[?25l\e[K"
 
-	echo -n "$prompt$temp_str$color${post_prompt:${#string}}"
-	printf '\e[K\e8'
-	echo -n "$prompt"
+	printf '%s\e[K\e8%s' "$prompt$temp_str$color${post_prompt:${#string}}" "$prompt"
 
-	# Very wasteful, runs like dog ass
 	temp_str="${string:0:$curpos}"
-	echo -n "${temp_str//$'\n'/$'\n'$PS2exp}"
+	#echo -n "${temp_str//$'\n'/$'\n'$PS2exp}"
 
-	printf '\e[0m\e[?25h'
-	# Making all of this a one-liner would be heaven for performance,
-	# unfortunately its pretty hard if not impossible
-	# Add to target list
+	printf '%s\e[0m\e[?25h' "${temp_str//$'\n'/$'\n'$PS2exp}"
 }
 
 prev-word() {
@@ -303,7 +296,7 @@ main_loop() {
 
 		set -o history
 		stty echo
-		eval -- "$string" # I hate this, and you should know that i hate it pls
+		eval -- "$string" # I hate this, and you should know that i hate it
 		stty -echo
 		set +o history
 
