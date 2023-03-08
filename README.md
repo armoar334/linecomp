@@ -8,9 +8,7 @@ Beta readline replacement and command suggestion in/for ``bash 4.0+``
 This has been removed temporarily in favor of a faster, more reliable manpage-based approach  
 
 # usage
-source linecomp.sh at the end of your bashrc, and add linecomp.txt in ~/.local/share  
-I WOULD ADVISE AGAINST USING THIS ON A HARD DISK
-Its usable in my experience, but still a bit slow
+source linecomp.sh at the end of your bashrc
 
 # Features
 Subdirectory / Directory suggestion  
