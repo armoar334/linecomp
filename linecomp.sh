@@ -198,7 +198,14 @@ multi_check() {
 		*"EOM"*"EOM"*|*"EOF"*"EOF"*) reading=false ;;
 		*'\'|*"EOM"*|*"EOF"*) string+=$'\n'
 			((curpos+=1)) ;;
-		*) reading=false ;;
+		*)
+			if [[ $(bash -nc "$string" 2>&1) == *EOF* ]];
+			then
+				string+=$'\n'
+				((curpos+=1))
+			else
+				reading=false
+			fi ;;
 	esac
 }
 
@@ -295,7 +302,7 @@ main_loop() {
 			color=$c1
 		done
 		printf "\n"
-		if ! [[ -z "$string" ]]; then echo "${string//\\$'\n'/}" >> "$HISTFILE"; fi
+		if ! [[ -z "$string" ]]; then echo "${string//\\$'\n'/}" | tr -d $'\n' >> "$HISTFILE"; fi
 		# Pretend stuff just works
 
 		set -o history
