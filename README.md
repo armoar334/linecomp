@@ -23,7 +23,8 @@ Feature parity with GNU Readline - ~50%
 Vi mode + keybindings - 0%  (don't personally use so might never implement)  
 
 # Why
-The only existing readline replacement that achieves my desired results is ble.sh, and as much of a feat as it is, I felt like perhaps it could be a fun project to re-implement. As a result, I began to implement my own line-editor, and thats what linecomp has become since  
+The only existing readline replacement that achieves my desired results is ble.sh, but it has a lot of extra features that i dont want / need, which, as its written in bash to begin with makes it a little slow.
+As a result, I began to implement my own line-editor, and thats what linecomp has become since  
 I mean yeah, i could just use zsh or fish but wheres the fun in that?  
 
 # Todo's ( in order of priority (should probably put somewhere else))
