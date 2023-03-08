@@ -37,7 +37,7 @@ I mean yeah, i could just use zsh or fish but wheres the fun in that?
  - start vi mode implementation
 
 ## Done / very low priority
- - ~~Stop commiting directly to main (more of a personal note tbh)~~ (You cant make me)
+ - ~~Stop commiting directly to main~~ (You can't make me)
  - ~~Multi-line statements with escapes (works basically, need to do more work on it)~~ (Done, but slow)
  - ~~Replace grep with something less susceptible to regex injections / Fix my awful regex's~~ (not really necessary)
  - ~~Switch all if/else ladders to case statements for speed~~ (done as much as can be for now)
