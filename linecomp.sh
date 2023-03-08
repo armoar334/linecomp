@@ -302,7 +302,7 @@ main_loop() {
 			color=$c1
 		done
 		printf "\n"
-		if ! [[ -z "$string" ]]; then echo "${string//\\$'\n'/}" | tr -d $'\n' >> "$HISTFILE"; fi
+		if ! [[ -z "$string" ]]; then echo "${string//\\$'\n'/}" >> "$HISTFILE"; fi
 		# Pretend stuff just works
 
 		set -o history
