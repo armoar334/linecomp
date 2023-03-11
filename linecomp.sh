@@ -66,9 +66,7 @@ history_completion() {
 	set -o history
 	history_args=$( history | cut -c 8- | grep -m1 '^'"$string")
 	history_args="${history_args%%$'\n'*}"
-	rem_str="${string% *}"
-	history_args="${history_args/$rem_str}"
-	history_args="${history_args:1}"
+	history_args="${history_args:${#string}}"
 }
 
 subdir_completion() {
@@ -131,6 +129,9 @@ command_completion() {
 	*'$( '*)
 		has_pipe=true
 		comp_string="${string##*'$( '}" ;;
+	*'& '*)
+		has_pipe=true
+		comp_string="${string##*'& '}" ;;
 	*)
 		has_pipe=false
 		comp_string="$string" ;;
