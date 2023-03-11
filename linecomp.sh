@@ -101,6 +101,8 @@ subdir_completion() {
 }
 
 man_completion() {
+	local string
+	string="$1"
 	command_one="${string%% *}"
 	command_end="${string##* }"
 	if [[ "${string##* }" == '-'* ]] && [[ "${#command_end}" -le 1 ]];
@@ -121,9 +123,17 @@ man_completion() {
 }
 
 command_completion() {
-	case "$string" in
+	if [[ "${string//[[:alpha:]]}" == *'| '* ]];
+	then
+		has_pipe=true
+		comp_string="${string##*| }"
+	else
+		has_pipe=false
+		comp_string="$string"
+	fi
+	case "$comp_string" in
 	*' '|*' '*)
-		man_completion 2>/dev/null
+		man_completion "$comp_string" 2>/dev/null
 		subdir_completion 2>/dev/null
 		history_completion 2>/dev/null
 		args="$history_args"$'\n'"$files"$'\n'"$man_args"
@@ -134,7 +144,12 @@ command_completion() {
 		history_completion 2>/dev/null
 		args="$history_args"$'\n'"$files"$'\n'"$commands"
 		suggest=$(grep -F -- "${string##* }" <<<"$args")
-		suggest="${suggest%%$'\n'*}";;
+		if [[ $has_pipe == true ]];
+		then
+			suggest="${string% *} ${suggest%%$'\n'*}"
+		else
+			suggest="${suggest%%$'\n'*}"
+		fi ;;
 	esac
 	post_prompt="$suggest"
 }
