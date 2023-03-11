@@ -204,7 +204,7 @@ multi_check() {
 		*'\'|*"EOM"*|*"EOF"*) string+=$'\n'
 			((curpos+=1)) ;;
 		*)
-			if [[ $(bash -nc "$string" 2>&1) == *EOF* ]];
+			if [[ $(bash -nc "$string" 2>&1) == *'unexpected end of file'* ]];
 			then
 				string+=$'\n'
 				((curpos+=1))
