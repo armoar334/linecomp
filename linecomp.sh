@@ -107,11 +107,16 @@ man_completion() {
 	# IK there are commands that dont start with - but thats for later
 	# Command length just makes sure it doesnt re-check every time, mega speed increase
 	then
-		man_args=$(man -Tascii "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
-		# Few notes: SSD's work fine, but on my X230 w/ HDD
-		# This take 0.3 seconds each for the bash page, of which 0.013 is the sorting
-		# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
-		# -Tascii take this down by ~0.030 but even then its borderline unusable, all bc of pointless formatting bs
+		if [[ "$OSTYPE" == *darwin* ]];
+		then
+			man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
+		else
+			man_args=$(man -Tascii "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
+			# Few notes: SSD's work fine, but on my X230 w/ HDD
+			# This take 0.3 seconds each for the bash page, of which 0.013 is the sorting
+			# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
+			# -Tascii take this down by ~0.030 but even then its borderline unusable, all bc of pointless formatting bs
+		fi
 	fi
 }
 
