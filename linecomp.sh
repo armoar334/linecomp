@@ -123,14 +123,17 @@ man_completion() {
 }
 
 command_completion() {
-	if [[ "${string//[[:alpha:]]}" == *'| '* ]];
-	then
+	case "${string//[[:alpha:]]}" in
+	*'| '*)
 		has_pipe=true
-		comp_string="${string##*| }"
-	else
+		comp_string="${string##*| }" ;;
+	*'$( '*)
+		has_pipe=true
+		comp_string="${string##*'$( '}" ;;
+	*)
 		has_pipe=false
-		comp_string="$string"
-	fi
+		comp_string="$string" ;;
+	esac
 	case "$comp_string" in
 	*' '|*' '*)
 		man_completion "$comp_string" 2>/dev/null
