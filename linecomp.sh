@@ -189,21 +189,23 @@ backspace_from_string() {
 	fi
 }
 
-hist_down() {
+hist_up() {
+	set -o history
 	if [[ $histpos -le $histmax ]]; then ((histpos+=1)); fi
-	if [[ $histpos -le $histmax ]];
-	then
-		suggest="$(sed -n "$histpos"p "$HISTFILE")"
-	else
-		suggest=""
-	fi
+	if [[ $histpos -ge $histmax ]]; then ((histpos=histmax)); fi
+	suggest="$(history $histpos | head -1 | cut -c 8- )"
 	post_prompt="$suggest"
 }
 
-hist_up() {
+hist_down() {
+	set -o history
 	if [[ $histpos -gt 0 ]]; then ((histpos-=1)); fi
-	if [[ $histpos == 0 ]]; then histpos=1; fi
-	suggest=$(sed -n "$histpos"p "$HISTFILE")
+	if [[ $histpos == 0 ]];
+	then
+		suggest=""
+	else
+		suggest="$(history $histpos | head -1 | cut -c 8-)"
+	fi
 	post_prompt="$suggest"
 }
 
@@ -277,7 +279,7 @@ main_loop() {
 		PS2exp="${PS2@P}"
 		string=''
 		histmax=$(( $(wc -l "$HISTFILE" | awk '{print $1}') + 1 ))
-		histpos=$histmax
+		histpos=0
 
 		oldifs=$IFS
 		IFS=''
@@ -325,14 +327,12 @@ main_loop() {
 			color=$c1
 		done
 		printf "\n"
-		if ! [[ -z "$string" ]]; then echo "${string//\\$'\n'/}" >> "$HISTFILE"; fi
-		# Pretend stuff just works
 
-		set -o history
 		stty echo
+		set -o history
+		history -s "$string"
 		eval -- "$string" # I hate this, and you should know that i hate it
 		stty -echo
-		set +o history
 
 		printf '\e7'
 		IFS=$oldifs
@@ -347,3 +347,10 @@ stty -echo
 main_loop
 stty echo
 printf "\nlinecomp exited"
+
+
+
+
+
+
+
