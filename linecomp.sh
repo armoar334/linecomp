@@ -64,7 +64,7 @@ search_escape() {
 
 history_completion() {
 	set -o history
-	history_args=$( history | cut -c 8- | grep -m1 '^'"$string")
+	history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
 	history_args="${history_args%%$'\n'*}"
 	history_args="${history_args:${#string}}"
 }
@@ -191,17 +191,10 @@ backspace_from_string() {
 	fi
 }
 
-hist_up() {
+hist_suggest() {
 	set -o history
-	if [[ $histpos -le $histmax ]]; then ((histpos+=1)); fi
+	if [[ $histpos -le 0 ]]; then ((histpos=0)); fi
 	if [[ $histpos -ge $histmax ]]; then ((histpos=histmax)); fi
-	suggest="$(history $histpos | head -1 | cut -c 8- )"
-	post_prompt="$suggest"
-}
-
-hist_down() {
-	set -o history
-	if [[ $histpos -gt 0 ]]; then ((histpos-=1)); fi
 	if [[ $histpos == 0 ]];
 	then
 		suggest=""
@@ -298,8 +291,8 @@ main_loop() {
 						# Cursor
 						"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
 						"[D") cursor_move ;;
-						'[A') hist_up ;;
-						'[B') hist_down ;;
+						'[A') ((histpos+=1)) && hist_suggest ;;
+						'[B') ((histpos-=1)) && hist_suggest ;;
 						'[1')	# Ctrl + arrows
 							read -rsn3 mode
 							case "$mode" in
@@ -311,6 +304,14 @@ main_loop() {
 								del_from_string
 							fi
 							read -rsn1 _ ;; # Get rid of ~ after delete
+						'[5')
+							histpos=$histmax
+							hist_suggest
+							read -rsn1 _ ;;
+						'[6')
+							histpos=0
+							hist_suggest
+							read -rsn1 _ ;;
 					esac ;;
 				# Ctrl characters
 				$'\ca') curpos=0 ;;
