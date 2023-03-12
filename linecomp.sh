@@ -66,6 +66,9 @@ history_completion() {
 	set -o history
 	history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
 	history_args="${history_args%%$'\n'*}"
+	rem_str="${string% *}"
+	history_args="${history_args/$rem_str}"
+	history_args="${history_args:1}"
 }
 
 subdir_completion() {
