@@ -143,7 +143,7 @@ command_completion() {
 		man_completion "$comp_string" 2>/dev/null
 		subdir_completion 2>/dev/null
 		history_completion 2>/dev/null
-		args="$history_args"$'\n'"$files"$'\n'"$man_args"
+		args="$files"$'\n'"$man_args"$'\n'"$history_args"
 		args=$(grep -F -m1 -- "${string##* }" <<<"$args")
 		suggest="${string% *} $args" ;;
 	*)
