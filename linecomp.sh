@@ -51,9 +51,9 @@ ctrl-c() {
 	# the input is a subprocess and Ctrl-c'ing it just kills the process
 	# We have to do a lot of incomplete mimicry
 	echo "^C"
-	string=''
-	suggest=''
-	post_prompt=''
+	string=
+	suggest=
+	post_prompt=
 	printf '\e[s'
 	print_command_line
 }
@@ -143,7 +143,7 @@ command_completion() {
 		man_completion "$comp_string" 2>/dev/null
 		subdir_completion 2>/dev/null
 		history_completion 2>/dev/null
-		args="$files"$'\n'"$man_args"$'\n'"$history_args"
+		args="$history_args"$'\n'"$files"$'\n'"$man_args"
 		args=$(grep -F -m1 -- "${string##* }" <<<"$args")
 		suggest="${string% *} $args" ;;
 	*)
