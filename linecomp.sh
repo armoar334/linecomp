@@ -26,14 +26,12 @@ fi
 trap "echo linecomp exited" EXIT
 trap 'ctrl-c' INT SIGINT
 
+
 if [[ -z "$HISTFILE" ]];
 then
 	HISTFILE="~/.bash_history"
 fi
 
-new_line=$(printf "\n")
-back_space=$(printf $'\177')
-delete_char="[3"
 post_prompt=""
 curpos=0
 suggest=""
@@ -115,7 +113,6 @@ man_completion() {
 			man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
 		else
 			man_args=$(man -Tascii "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
-			# Few notes: SSD's work fine, but on my X230 w/ HDD
 			# This take 0.3 seconds each for the bash page, of which 0.013 is the sorting
 			# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
 			# -Tascii take this down by ~0.030 but even then its borderline unusable, all bc of pointless formatting bs
@@ -288,7 +285,7 @@ main_loop() {
 			case "$mode" in
 				# Escape characters
 				$'\e')
-					read -rsn2 mode
+					read -rsn2 -t 0.01 mode # This isnt great but its platform independant and how curses does it so
 					case "$mode" in # Read 1 more to discard some stuff
 						# Cursor
 						"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
@@ -314,6 +311,8 @@ main_loop() {
 							histpos=0
 							hist_suggest
 							read -rsn1 _ ;;
+						'')
+							printf '' ;; # Single escape, useful for vi mode later
 					esac ;;
 				# Ctrl characters
 				$'\ca') curpos=0 ;;
@@ -321,12 +320,12 @@ main_loop() {
 				$'\cd') [[ -z "$string" ]] && exit ;;
 				$'\ce') curpos=${#string} ;;
 				$'\c?'|$'\ch') backspace_from_string ;;
+				$'\cl') clear; printf '\e[H\e7' ;;
 				$'\co') reading=0 ;;
 				$'\c'*) printf '' ;; # This is redundant, ctrl codes cant be wildcarded
 				# Rest
 				$'\t') finish_complete && curpos=${#string} ;;
-				"$newline") multi_check ;; # $'\n' doesnt work idk y
-				"$delete_char")	if [[ ${#string} -gt 0 ]]; then del_from_string; fi ;;
+				"") multi_check ;; # $'\n' doesnt work idk y
 				*) add_to_string && command_completion ;;
 			esac
 			color=$c1
