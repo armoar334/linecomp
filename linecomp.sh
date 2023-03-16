@@ -326,7 +326,8 @@ main_loop() {
 				# Rest
 				$'\t') finish_complete && curpos=${#string} ;;
 				"") multi_check ;; # $'\n' doesnt work idk y
-				*) add_to_string && command_completion ;;
+				[[:print:]]) add_to_string && command_completion ;;
+				#*) add_to_string && command_completion ;;
 			esac
 			color=$c1
 		done
