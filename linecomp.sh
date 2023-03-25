@@ -285,7 +285,7 @@ main_loop() {
 			case "$mode" in
 				# Escape characters
 				$'\e')
-					read -rsn2 -t 0.01 mode # This isnt great but its platform independant and how curses does it so
+					read -rsn2 mode # This isnt great but its platform independant and how curses does it so
 					case "$mode" in # Read 1 more to discard some stuff
 						# Cursor
 						"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
