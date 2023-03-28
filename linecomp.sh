@@ -147,7 +147,7 @@ command_completion() {
 		subdir_completion 2>/dev/null
 		history_completion 2>/dev/null
 		args="$history_args"$'\n'"$files"$'\n'"$commands"
-		suggest=$(grep -F -- "${string##* }" <<<"$args")
+		suggest=$(grep -- "^${string##* }" <<<"$args" 2>/dev/null)
 		if [[ $has_pipe == true ]];
 		then
 			suggest="${string% *} ${suggest%%$'\n'*}"
