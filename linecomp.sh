@@ -3,11 +3,8 @@
 # linecomp
 # readline "replacment" for bash
 
-# ABANDON ALL HOPE YE WHO ENTER HERE!
 # If you inted to commit code, i hope you have the patience of a saint, because
-# I am NOT a good programmer, and i'm an even worse social programmer
-# Style guides? no
-# Consistent and readable comments? You wish!
+# I am a bad programmer, and i'm an even worse social programmer
 
 # ALSO although it __is__ open contribution, its a personal project really
 # (and idk how git works), so stuff may not be merged in a timely manner
@@ -63,6 +60,7 @@ search_escape() {
 history_completion() {
 	set -o history
 	history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
+	#history_args=$( < "$HISTFILE" grep -m1 -F -- $'\n'"$string")
 	history_args="${history_args%%$'\n'*}"
 	rem_str="${string% *}"
 	history_args="${history_args/$rem_str}"
@@ -84,7 +82,8 @@ subdir_completion() {
 		search_term="${dir_suggest/\/}"
 		search_escape
 		files=$(ls / | grep -v '\.$' | grep -- '^'"$search_term" | sort -n | sed 's/^/\//g')
-	else # Directory in current pwd
+	elif [[ "$(ls)" == *"$dir_suggest"* ]]; # Directory in current pwd
+	then
 		search_term="$dir_suggest"
 		search_escape
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
@@ -139,7 +138,7 @@ command_completion() {
 	*' '|*' '*)
 		man_completion "$comp_string" 2>/dev/null
 		subdir_completion 2>/dev/null
-		history_completion 2>/dev/null
+		history_completion #2>/dev/null
 		args="$history_args"$'\n'"$files"$'\n'"$man_args"
 		args=$(grep -F -m1 -- "${string##* }" <<<"$args")
 		suggest="${string% *} $args" ;;
@@ -255,6 +254,21 @@ next-word() {
 	curpos="$(( ${#string} - ${#ctrl_right} ))"
 }
 
+read_in_paste() {
+	# bad way to do direct read in, cry abt it
+	echo reading in
+	while true;
+	do
+		read -rsn1 -t 0.001 mode
+		if [[ -z "$mode" ]];
+		then
+			return
+		else
+			add_to_string
+		fi
+	done
+}
+
 cursor_move() {
 	case "$mode" in
 		"[C") ((curpos+=1)) ;;
@@ -298,6 +312,8 @@ main_loop() {
 								';5C') next-word ;;
 								';5D') prev-word ;;
 							esac ;;
+						'[2')
+							read_in_paste ;;
 						'[3')
 							if [[ ${#string} -gt 0 ]]; then
 								del_from_string
@@ -326,7 +342,9 @@ main_loop() {
 				# Rest
 				$'\t') finish_complete && curpos=${#string} ;;
 				"") multi_check ;; # $'\n' doesnt work idk y
-				[[:print:]]) add_to_string && command_completion ;;
+				[[:print:]])
+					add_to_string
+					command_completion ;;
 				#*) add_to_string && command_completion ;;
 			esac
 			color=$c1
