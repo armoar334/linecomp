@@ -58,16 +58,9 @@ search_escape() {
 }
 
 history_completion() {
-	if [[ "${#string}" -le 1 ]];
-	then
-		set -o history
-		history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
-		#history_args=$( < "$HISTFILE" grep -m1 -F -- $'\n'"$string")
-		history_args="${history_args%%$'\n'*}"
-		rem_str="${string% *}"
-		history_args="${history_args/$rem_str}"
-		#history_args="${history_args:1}"
-	fi
+	set -o history
+	history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
+	history_args=$(<<<"$history_args" cut -c $(( ${#string} + 1 ))- )
 }
 
 subdir_completion() {
@@ -102,11 +95,11 @@ subdir_completion() {
 }
 
 man_completion() {
-	local string
-	string="$1"
-	command_one="${string%% *}"
-	command_end="${string##* }"
-	if [[ "${string##* }" == '-'* ]] && [[ "${#command_end}" -le 1 ]];
+	local man_string
+	man_string="$1"
+	command_one="${man_string%% *}"
+	command_end="${man_string##* }"
+	if [[ "${man_string##* }" == '-'* ]] && [[ "${#command_end}" -le 1 ]];
 	# IK there are commands that dont start with - but thats for later
 	# Command length just makes sure it doesnt re-check every time, mega speed increase
 	then
@@ -137,25 +130,18 @@ command_completion() {
 		has_pipe=false
 		comp_string="$string" ;;
 	esac
+	subdir_completion 2>/dev/null
+	history_completion #2>/dev/null
 	case "$comp_string" in
 	*' '|*' '*)
 		man_completion "$comp_string" 2>/dev/null
-		subdir_completion 2>/dev/null
-		history_completion #2>/dev/null
 		args="$history_args"$'\n'"$files"$'\n'"$man_args"
 		args=$(grep -F -m1 -- "${string##* }" <<<"$args")
 		suggest="${string% *} $args" ;;
 	*)
-		subdir_completion 2>/dev/null
-		history_completion 2>/dev/null
 		args="$history_args"$'\n'"$files"$'\n'"$commands"
-		suggest=$(grep -- "^${string##* }" <<<"$args" 2>/dev/null)
-		if [[ $has_pipe == true ]];
-		then
-			suggest="${string% *} ${suggest%%$'\n'*}"
-		else
-			suggest="${suggest%%$'\n'*}"
-		fi ;;
+		args=$(grep -F -m1 -- "${string##* }" <<<"$args")
+		suggest="$args" ;;
 	esac
 	post_prompt="$suggest"
 }
@@ -333,7 +319,6 @@ main_loop() {
 							esac ;;
 						'[2')
 							clear
-							echo -e '\nCOCK'
 							read_in_paste ;;
 						'[3')
 							if [[ ${#string} -gt 0 ]]; then
