@@ -58,7 +58,7 @@ search_escape() {
 }
 
 history_completion() {
-	if [[ "${#string}" -lt 1 ]];
+	if [[ "${#string}" -le 1 ]];
 	then
 		set -o history
 		history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
@@ -66,7 +66,7 @@ history_completion() {
 		history_args="${history_args%%$'\n'*}"
 		rem_str="${string% *}"
 		history_args="${history_args/$rem_str}"
-		history_args="${history_args:1}"
+		#history_args="${history_args:1}"
 	fi
 }
 
@@ -160,7 +160,7 @@ command_completion() {
 	post_prompt="$suggest"
 }
 
-add_to_string() {
+self-insert() {
 	string="${string:0:$curpos}$mode${string:$curpos}"
 	((curpos+=1))
 }
@@ -206,7 +206,7 @@ hist_suggest() {
 }
 
 finish_complete() {
-	if [[ ! -z "${post_prompt:${#string}}" ]];
+	if [[ -n "${post_prompt:${#string}}" ]];
 	then
 		string="$post_prompt"
 		curpos=${#string}
@@ -257,9 +257,9 @@ next-word() {
 	curpos="$(( ${#string} - ${#ctrl_right} ))"
 }
 
-read_in_paste() {
-	# bad way to do direct read in, cry abt it
-	echo reading in
+quoted-insert() {
+	read -rsn1 mode
+	self-insert
 	while true;
 	do
 		read -rsn1 -t 0.001 mode
@@ -267,7 +267,23 @@ read_in_paste() {
 		then
 			return
 		else
-			add_to_string
+			self-insert
+		fi
+	done	
+}
+
+read_in_paste() {
+	# bad way to do direct read in, cry abt it
+	echo
+	echo 'reading in'
+	while true;
+	do
+		read -rsn1 -t 0.001 mode
+		if [[ -z "$mode" ]];
+		then
+			return
+		else
+			self-insert
 		fi
 	done
 }
@@ -292,8 +308,8 @@ main_loop() {
 		histmax=$(( $(wc -l "$HISTFILE" | awk '{print $1}') + 1 ))
 		histpos=0
 
-		oldifs=$IFS
 		IFS=''
+		oldifs=$IFS
 		while [[ "$reading" == "true" ]];
 		do
 			printed_var=$(print_command_line)
@@ -302,8 +318,8 @@ main_loop() {
 			case "$mode" in
 				# Escape characters
 				$'\e')
-					read -rsn2 mode # This isnt great but its platform independant and how curses does it so
-					case "$mode" in # Read 1 more to discard some stuff
+					read -rsn2 mode
+					case "$mode" in
 						# Cursor
 						"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
 						"[D") cursor_move ;;
@@ -316,6 +332,8 @@ main_loop() {
 								';5D') prev-word ;;
 							esac ;;
 						'[2')
+							clear
+							echo -e '\nCOCK'
 							read_in_paste ;;
 						'[3')
 							if [[ ${#string} -gt 0 ]]; then
@@ -341,20 +359,21 @@ main_loop() {
 				$'\c?'|$'\ch') backspace_from_string ;;
 				$'\cl') clear; printf '\e[H\e7' ;;
 				$'\co') reading=0 ;;
+				$'\cv') quoted-insert ;;
 				$'\c'*) printf '' ;; # This is redundant, ctrl codes cant be wildcarded
 				# Rest
 				$'\t') finish_complete && curpos=${#string} ;;
 				"") multi_check ;; # $'\n' doesnt work idk y
 				[[:print:]])
-					add_to_string
+					self-insert
 					command_completion ;;
-				#*) add_to_string && command_completion ;;
+				#*) self-insert && command_completion ;;
 			esac
 			color=$c1
 		done
 		printf "\n"
 
-		stty echo
+		stty "$default_term_state"
 		set -o history
 		history -s "$string"
 		eval -- "$string" # I hate this, and you should know that i hate it
@@ -369,9 +388,10 @@ main_loop() {
 }
 
 commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
+default_term_state=$(stty -g)
 stty -echo
 main_loop
-stty echo
+stty "$default_term_state"
 printf "\nlinecomp exited"
 
 
