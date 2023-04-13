@@ -140,8 +140,8 @@ command_completion() {
 		suggest="${string% *} $args" ;;
 	*)
 		args="$history_args"$'\n'"$files"$'\n'"$commands"
-		args=$(grep -F -m1 -- $'\n'"${string##* }" <<<"$args")
-		suggest="$args" ;;
+		args=$(grep -F -m1 -- $'\n'"${comp_string##* }" <<<"$args")
+		suggest="${string% *}$args" ;;
 	esac
 	post_prompt="$suggest"
 }
