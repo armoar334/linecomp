@@ -378,10 +378,3 @@ stty -echo
 main_loop
 stty "$default_term_state"
 printf "\nlinecomp exited"
-
-
-
-
-
-
-

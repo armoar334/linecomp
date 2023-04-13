@@ -23,15 +23,15 @@ compose_case() {
 	local other_binds
 	
 	raw_binds=$(
-		bind -p | grep -v '^#'
+		bind -p | grep -v '^#' | tr "'\"" "\"'"
 	)
 	
 	escape_binds=$(
-		<<<"$raw_binds" grep -F '"\e'
+		<<<"$raw_binds" grep -F '\e'
 	)
 	
 	ctrl_binds=$(
-		<<<"$raw_binds" grep -F '"\C'		
+		<<<"$raw_binds" grep -- '\''\C'		
 	)
 	
 	insert_binds=$(
@@ -42,24 +42,29 @@ compose_case() {
 		echo 'case $_char in'
 		# Escapes
 		echo -ne '\t' 
-		echo '$'"'\e') echo escpae ;;"
+		echo '$'"'\e')"
 
 		# Sub-escapes
 		# None of this technichally needs to be indented but its easier to read for debugging
-		#echo -e '\t\t_temp=""'
-		#echo -e '\t\tuntil [[ -z "$_char" ]]; do'
-		#echo -e '\t\t\tread -rsn1 _char'
-		#echo -e '\t\t\t_temp+="$_char"'
-		#echo -e '\t\tdone'
-		#echo -e '\t\tcase "$_char" in'
-		#echo "${escape_binds//\"\\e/}" | grep -v -F '\C' | sed -e "s/^/\t\t\t'/g" -e 's/": /) /g'
+		echo -e '\t\tread -rsn1 _char ' # Read one more untimed for manually input esc seqs
+		echo -e '\t\tread -rsn5 -t 0.01 _temp ' # Read 5 more timed for stuff like ctrl+arrows 
+		echo -e '\t\t_char="$_char$_temp"' # Not elegant, but mostly functional
+		echo -e '\t\tcase "$_char" in'
+		echo "${escape_binds//$'\n'\'\\e/$'\n'\'}" | sed -e "s/^/\t\t\t/g" -e 's/: /) /g' -e 's/\C-/\c/g' -e 's/$/ ;;/g'
 		# Multi ctrl/esc sequences are too much hassle atm, so ignore
-		#echo -e '\t\tesac'
+		echo -e '\t\tesac ;;'
 
 		echo -ne '\t'
 		echo "'q') _reading='false' && return ;;"
+		# Ctrl characters
+		echo "${ctrl_binds//\\C-/\\c}" | sed -e 's/^/\t\$/g' -e 's/: /) /g' -e 's/$/ ;;/g' | grep delete | tr '"' "'"
+
 		# Self-insertion characters
-		echo "${insert_binds//\"\\2/\$\"\\2}" | sed -e 's/^/\t/g' -e 's/: /) /g' -e 's/$/ ;;/g' -e 's/`/\\\`/g'
+		echo "${insert_binds//\"\\2/\$\"\\2}" | sed -e 's/^/\t/g' -e 's/: /) /g' -e 's/$/ ;;/g' -e 's/`/\\\`/g' | sed -e 's/" "/'\'' '\''/g' -e "s/'.''/\"\\'\"/g"
+		echo "'[[:print:]]') echo -e '\nDONE' ;;"
+
+		echo -ne '\t'
+		echo '*) echo && echo "$_char" ;;' 
 		
 		echo 'esac'
 	)
@@ -77,14 +82,55 @@ print_command_line() {
 	printf '%s\e[0m\e[?25h' "${temp_str//$'\n'/$'\n'$_PS2exp}"
 }
 
+# Text manipulation
+
 self-insert() {
-	_string+="$_char"
+	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
+	((_curpos+=1))
+}
+
+backward-delete-char() {
+	if [[ $_curpos -gt 0 ]];
+	then
+		_string="${_string:0:$((_curpos-1))}${_string:$_curpos}"
+		((_curpos-=1))
+	fi
+}
+
+delete-char() {
+	_string="${_string:0:$_curpos}${_string:$((_curpos+1))}"
+}
+
+# Cursor
+forward-char() {
+	((_curpos+=1))
+}
+
+forward-word() {
+	_temp="${_string:$(( _curpos + 1 ))} "
+	_temp="${_temp#*[^[:alnum:]]}"
+	_curpos="$(( ${#_string} - ${#_temp} ))"
+}
+
+backward-char() {
+	if [[ $_curpos -gt 1 ]];
+	then
+		((_curpos-=1))
+	fi
+}
+
+backward-word() {
+	_temp="${_string:0:$_curpos}"
+	_temp="${_temp%[^[:alnum:]]*}"
+	_curpos=${#_temp}
+
 }
 
 main_loop() {
 	comp_running=true
 	while [[ $comp_running == true ]];
 	do
+		_curpos=0
 		_reading="true"
 		_prompt="${PS1@P}"
 		_PS2exp="${PS2@P}"
@@ -95,15 +141,13 @@ main_loop() {
 		while [[ "$_reading" == "true" ]];
 		do
 			echo -n "$(print_command_line)"
-			read -rsn1 _char
+			IFS= read -rsn1 -d '' _char
 			eval -- "$linecomp_case"
 		done
 	done
 }
 
-echo
-printf '\e[7'
+printf '\e7'
 compose_case
-#main_loop
+main_loop
 echo "$linecomp_case"
-
