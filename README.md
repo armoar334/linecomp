@@ -9,6 +9,8 @@ This has been removed temporarily in favor of a faster, more reliable manpage-ba
 
 # usage
 source linecomp.sh at the end of your bashrc
+if you need to return to a vanilla shell, type 'return' and enter
+
 
 # Features
 Subdirectory / Directory suggestion  
