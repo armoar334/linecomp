@@ -20,7 +20,7 @@ then
 	return
 fi
 
-trap "echo linecomp exited" EXIT
+trap "history -a && echo linecomp exited" EXIT
 trap 'ctrl-c' INT SIGINT
 
 
@@ -58,13 +58,16 @@ search_escape() {
 }
 
 history_completion() {
-	set -o history
-	history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
-	#history_args=$( < "$HISTFILE" grep -m1 -F -- $'\n'"$string")
-	history_args="${history_args%%$'\n'*}"
-	rem_str="${string% *}"
-	history_args="${history_args/$rem_str}"
-	history_args="${history_args:1}"
+	if [[ "${#string}" -lt 1 ]];
+	then
+		set -o history
+		history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
+		#history_args=$( < "$HISTFILE" grep -m1 -F -- $'\n'"$string")
+		history_args="${history_args%%$'\n'*}"
+		rem_str="${string% *}"
+		history_args="${history_args/$rem_str}"
+		history_args="${history_args:1}"
+	fi
 }
 
 subdir_completion() {
