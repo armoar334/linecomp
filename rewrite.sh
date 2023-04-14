@@ -15,7 +15,7 @@ fi
 _histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
 
 
-trap "_reading='false' && return" INT SIGINT
+trap "echo '^C' && printf '\e7' && _reading='false'" INT SIGINT
 trap "history -a && echo linecomp exited" EXIT
 
 compose_case() {
@@ -47,10 +47,9 @@ compose_case() {
 	linecomp_case=$(
 		echo 'case $_char in'
 
-		# Uncustomisables (EOF, tab complete)
+		# Uncustomisables (EOF, etc)
 		cat <<-'EOF'
 			$'\cd') [[ -z "$_string" ]] && exit ;;
-			$'\t') _string="$_post_prompt" && _curpos=${#_string} ;;
 		EOF
 
 		# Escapes
@@ -90,6 +89,7 @@ compose_case() {
 self-insert() {
 	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
 	((_curpos+=1))
+	comp_complete
 }
 
 backward-delete-char() {
@@ -145,12 +145,13 @@ end-of-line() {
 }
 
 complete() {
-	if ! [[ -z "$_post_prompt" ]];
+	if [[ -n "${_post_prompt// }" ]];
 	then
 		_string="$_post_prompt"
 		_curpos=${#_string}
 	fi
 }
+
 
 # Not text
 next-history() {
@@ -215,12 +216,23 @@ print_command_line() {
 }
 
 # Completions
+comp_complete() {
+	man_completions "$_string"
+	subdir_completion
+	case "${_string}" in
+	*' '*|*' ')
+		_post_prompt=$( <<<$'\n'"$_man_args"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
+	*)
+		_post_prompt=$( <<<$'\n'"$_commands"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
+	esac
+}
+
 man_completions() {
 	local man_string
 	local command_one
 	local command_end
 
-	man_string="$_string"
+	man_string="$1"
 	command_one="${man_string%% *}"
 	command_end="${man_string##* }"
 	if [[ "${man_string##* }" == '-'* ]] && [[ "${#command_end}" -le 1 ]];
@@ -296,9 +308,6 @@ main_loop() {
 			echo -n "$(print_command_line)"
 			IFS= read -rsn1 -d '' _char
 			eval -- "$linecomp_case" #2>/dev/null
-			man_completions
-			subdir_completion
-			_post_prompt=$( <<<$'\n'"$_man_args"$'\n'"$_commands"$'\n'"$_file_args" grep -F -m1 -- "$_string")
 		done
 
 	done
