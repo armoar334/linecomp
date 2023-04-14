@@ -28,10 +28,6 @@ Suggestions - ~75%
 	Argument - 50%, manpage-parsing is fully functional but not as flexible as bash completions.  
 Vi mode + keybindings - 0%  (don't personally use so might never implement)  
 
-# Why
-As a result, I began to implement my own line-editor, and thats what linecomp has become since  
-I mean yeah, i could just use zsh or fish but wheres the fun in that?  
-
 # Todo's ( in order of priority (should probably put somewhere else))
 ## URGENT
  - Re-implement ``bash-completions``. It was previously implemented, however as it was slow, unreliable and not even guaranteed to work, i have decided to move to a manpage parsing approach. This is also not yet completely working, but as it is far faster and more reliable than bash-completions (not to mention technichally closer to how fish does it), this will be the primary approach for the time being.  
