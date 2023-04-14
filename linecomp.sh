@@ -181,8 +181,8 @@ complete() {
 next-history() {
 	((_comp_hist-=1))
 	if [[ $_comp_hist -le 0 ]]; then _comp_hist=0; fi
-	history_get
-	_string="$_hist_args"
+	_string="$(history_get)"
+	_curpos=${#_string}
 }
 
 previous-history() {
@@ -191,17 +191,17 @@ previous-history() {
 	then
 		_comp_hist=$_histmax
 	fi
-	history_get
-	_string="$_hist_args"
+	_string="$(history_get)"
+	_curpos=${#_string}
 }
 
 history_get() {
 	set -o history
 	if [[ $_comp_hist == 0 ]];
 	then
-		_hist_args=""
+		printf ""
 	else
-		_hist_args="$(history $_comp_hist | head -1 | cut -c 8-)"
+		printf '%s' "$(history $_comp_hist | head -1 | cut -c 8-)"
 	fi
 }
 
@@ -241,14 +241,18 @@ print_command_line() {
 	# reduced jitter to run it all into a variable and print all at once
 	# cat -v (considered harmful) is so that quoted inserts can work
 	# Also makes it slow, but thats for later
+
 	temp_str="${_string//$'\n'/$'\n'$_PS2exp}"
-	printf "\e8\e[?25l\e[K"
-	temp_str=$(cat -v <<<"$temp_str")
-	printf '%s%s%s%s\e[K\e8%s' "$_prompt" "$temp_str" "$_color" "${_post_prompt:${#_string}}" "$_prompt"
-	temp_str="${_string:0:$_curpos}"
-	temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
-	temp_str=$(cat -v <<<"$temp_str")
-	printf '%s\e[0m\e[?25h' "$temp_str"
+	printf '\e8\e[?25l\e[K%s' "$_prompt"
+	printf '%s' "$temp_str" | cat -v 
+	printf '%s%s\e[K\e8%s' "$_color" "${_post_prompt:${#_string}}" "$_prompt"
+
+	[[ $_curpos -ge 1 ]] && printf '\e[%sC' "$_curpos"
+
+	printf '\e[0m\e[?25h'
+	#temp_str="${_string:0:$_curpos}"
+	#temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
+	#printf '%s' "$temp_str" | cat -v
 }
 
 # Completions
@@ -328,7 +332,10 @@ subdir_completion() {
 }
 
 history_completion() {
-	_hist_args=$( fc -l -r -n 1 | col -bx | sed 's/^ *//g' | grep -- $'\n'"$_string")
+	if [[ "${#_string}" -le 1 ]];
+	then
+		_hist_args=$( fc -l -r -n 1 | col -bx | sed 's/^ *//g' | grep -- $'\n'"$_string")
+	fi
 }
 
 # Other
