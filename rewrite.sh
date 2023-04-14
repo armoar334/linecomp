@@ -60,7 +60,7 @@ compose_case() {
 		# Sub-escapes
 		# None of this technichally needs to be indented but its easier to read for debugging
 		echo -e '\t\tread -rsn1 _char ' # Read one more untimed for manually input esc seqs
-		echo -e '\t\tread -rsn5 -t 0.01 _temp ' # Read 5 more timed for stuff like ctrl+arrows 
+		echo -e '\t\tread -rsn5 -t 0.005 _temp ' # Read 5 more timed for stuff like ctrl+arrows 
 		echo -e '\t\t_char="$_char$_temp"' # Not elegant, but mostly functional
 		echo -e '\t\tcase "$_char" in'
 		echo "${escape_binds//$'\n'\'\\e/$'\n'\'}" | sed -e "s/^/\t\t\t/g" -e 's/: /) /g' -e 's/\C-/\c/g' -e 's/$/ ;;/g'
@@ -119,7 +119,7 @@ forward-word() {
 }
 
 backward-char() {
-	if [[ $_curpos -gt 1 ]];
+	if [[ $_curpos -gt 0 ]];
 	then
 		((_curpos-=1))
 	fi
@@ -156,13 +156,8 @@ complete() {
 next-history() {
 	((_comp_hist-=1))
 	if [[ $_comp_hist -le 0 ]]; then _comp_hist=0; fi
-	set -o history
-	if [[ $histpos == 0 ]];
-	then
-		_post_prompt=""
-	else
-		_post_prompt="$(history $_comp_hist | head -1 | cut -c 8-)"
-	fi
+	history_get
+	_string="$_hist_args"
 }
 
 previous-history() {
@@ -171,8 +166,18 @@ previous-history() {
 	then
 		_comp_hist=$_histmax
 	fi
-	_post_prompt="$(history $_comp_hist | head -1 | cut -c 8-)"
+	history_get
+	_string="$_hist_args"
+}
 
+history_get() {
+	set -o history
+	if [[ $_comp_hist == 0 ]];
+	then
+		_hist_args=""
+	else
+		_hist_args="$(history $_comp_hist | head -1 | cut -c 8-)"
+	fi
 }
 
 # Meta
