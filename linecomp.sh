@@ -1,101 +1,275 @@
 #!/usr/bin/env bash
 
-# linecomp
+# linecomp V2
 # readline "replacment" for bash
-
-# If you inted to commit code, i hope you have the patience of a saint, because
-# I am a bad programmer, and i'm an even worse social programmer
-
-# ALSO although it __is__ open contribution, its a personal project really
-# (and idk how git works), so stuff may not be merged in a timely manner
-#FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-# ^^^^ dont worry about this, its just an 80 column ruler
 
 # Check that current shell is bash
 # This works under zsh and crashes out on fish, so p much serves its purpose
 if [[ "$0" != *"bash"* ]];
 then
-	echo "Your current shell is not bash!"
-	echo "Many features will not work!"
-	return
+	echo "Your current shell is not bash, or you did not source the script!"
+	echo "You must run '. linecomp.sh' and not './linecomp.sh'!"
+	exit
 fi
 
+_histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
+
+
+trap "echo '^C' && printf '\e7' && _reading='false'" INT SIGINT
 trap "history -a && echo linecomp exited" EXIT
-trap 'ctrl-c' INT SIGINT
 
+compose_case() {
+	# This function composes the case statement used by linecomp for input
+	# it does this by reading the current session keybinds and turning them into a 
+	# statement that can be used for the users input, therefore allowing for linecomp
+	# to be a drop in replacement for the default line-editor
+	local raw_binds
+	local escape_binds
+	local ctrl_binds
+	local insert_binds
+	
+	raw_binds=$(
+		bind -p | grep -v '^#' | tr "'\"" "\"'"
+	)
+	
+	escape_binds=$(
+		<<<"$raw_binds" grep -F '\e'
+	)
+	
+	ctrl_binds=$(
+		<<<"$raw_binds" grep -- '\''\C'		
+	)
+	
+	insert_binds=$(
+		<<<"$raw_binds" grep -F 'self-insert'
+	)
 
-if [[ -z "$HISTFILE" ]];
-then
-	HISTFILE="~/.bash_history"
-fi
+	linecomp_case=$(
+		echo 'case $_char in'
 
-post_prompt=""
-curpos=0
-suggest=""
-histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
+		# Uncustomisables (EOF, etc)
+		cat <<-'EOF'
+			$'\004') [[ -z "$_string" ]] && exit ;;
+		EOF
 
-for code in {0..7}
-do
-	declare c$code=$(printf "\e[3"$code"m")
-done
+		# Escapes
+		echo -ne '\t' 
+		echo '$'"'\e')"
 
-printf '\e7'
+		# Sub-escapes
+		# None of this technichally needs to be indented but its easier to read for debugging
+		echo -e '\t\tread -rsn1 _char ' # Read one more untimed for manually input esc seqs
+		echo -e '\t\tread -rsn5 -t 0.005 _temp ' # Read 5 more timed for stuff like ctrl+arrows 
+		echo -e '\t\t_char="$_char$_temp"' # Not elegant, but mostly functional
+		echo -e '\t\tcase "$_char" in'
+		echo "${escape_binds//$'\n'\'\\e/$'\n'\'}" | sed -e "s/^/\t\t\t/g" -e 's/: /) /g' -e 's/\C-/\c/g' -e 's/$/ ;;/g'
+		# Multi ctrl/esc sequences are too much hassle atm, so ignore
+		echo -e '\t\tesac ;;'
 
-ctrl-c() {
-	# I think how this works in normal bash is that reading
-	# the input is a subprocess and Ctrl-c'ing it just kills the process
-	# We have to do a lot of incomplete mimicry
-	echo "^C"
-	string=
-	suggest=
-	post_prompt=
-	printf '\e[s'
-	print_command_line
+		
+
+		echo -ne '\t'
+		# Ctrl characters
+		echo "${ctrl_binds//\\C-/\\c}" | sed -e 's/^/\t\$/g' -e 's/: /) /g' -e 's/$/ ;;/g' | tr '"' "'"
+		# Self-insertion characters
+
+		echo "${insert_binds//\"\\2/\$\"\\2}" | sed -e 's/^/\t/g' -e 's/: /) /g' -e 's/$/ ;;/g' -e 's/`/\\\`/g' | sed -e 's/" "/'\'' '\''/g' -e "s/'.''/\"\\'\"/g"
+
+		echo -ne '\t'
+		echo '*) echo && echo "$_char" ;;' 
+		
+		echo 'esac'
+	)
+
 }
 
-search_escape() {
-	search_term=$(printf '%q' "$search_term" )
+
+# Text manipulation
+
+self-insert() {
+	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
+	((_curpos+=1))
+	comp_complete 2>/dev/null
 }
 
-history_completion() {
+quoted-insert() {
+	read -rsn1 _char
+	read -rsn5 -t 0.005 _temp
+	_char="$_char$_temp"
+	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
+	((_curpos+=${#_char}))
+}
+
+backward-delete-char() {
+	if [[ $_curpos -gt 0 ]];
+	then
+		_string="${_string:0:$((_curpos-1))}${_string:$_curpos}"
+		((_curpos-=1))
+	fi
+}
+
+delete-char() {
+	_string="${_string:0:$_curpos}${_string:$((_curpos+1))}"
+}
+
+tilde-expand() {
+	if [[ "${_string:$_curpos:1}" == '~' ]];
+	then
+		_string="${string:0:$((_curpos))}$HOME${_string:$((_curpos+1))}"
+		((_curpos+=${#HOME}))
+	elif [[ "${_string:$((_curpos-1)):1}" == '~' ]];
+	then
+		_string="${string:0:$((_curpos-1))}$HOME${_string:$((_curpos))}"
+		((_curpos+=${#HOME}))
+	fi
+}
+
+# Cursor
+forward-char() {
+	if [[ $_curpos -lt ${#_string} ]];
+	then
+		((_curpos+=1))
+	fi
+}
+
+forward-word() {
+	_temp="${_string:$(( _curpos + 1 ))} "
+	_temp="${_temp#*[^[:alnum:]]}"
+	_curpos="$(( ${#_string} - ${#_temp} ))"
+}
+
+backward-char() {
+	if [[ $_curpos -gt 0 ]];
+	then
+		((_curpos-=1))
+	fi
+}
+
+backward-word() {
+	_temp="${_string:0:$_curpos}"
+	_temp="${_temp%[^[:alnum:]]*}"
+	if ! [[ "$_temp" == *' '* ]];
+	then
+		_curpos=0
+	else
+		_curpos=${#_temp}
+	fi
+}
+
+beginning-of-line() {
+	_curpos=0
+}
+
+end-of-line() {
+	_curpos=${#_string}
+}
+
+kill-line() {
+	_string="${_string:0:$_curpos}"
+}
+
+complete() {
+	if [[ -n "${_post_prompt// }" ]];
+	then
+		_string="$_post_prompt"
+		_curpos=${#_string}
+	fi
+}
+
+
+# Not text
+next-history() {
+	((_comp_hist-=1))
+	if [[ $_comp_hist -le 0 ]]; then _comp_hist=0; fi
+	history_get
+	_string="$_hist_args"
+}
+
+previous-history() {
+	((_comp_hist+=1))
+	if [[ $_comp_hist -gt $_histmax ]];
+	then
+		_comp_hist=$_histmax
+	fi
+	history_get
+	_string="$_hist_args"
+}
+
+history_get() {
 	set -o history
-	history_args=$( history | tac | cut -c 8- | grep -m1 '^'"$string")
-	history_args=$(<<<"$history_args" cut -c $(( ${#string} + 1 ))- )
-}
-
-subdir_completion() {
-	search_term=''
-	dir_suggest="${string##* }"
-	# Subdirectories or pwd
-	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]];
+	if [[ $_comp_hist == 0 ]];
 	then
-		folders="${dir_suggest%'/'*}/"
-		search_term="${dir_suggest/$folders}"
-		search_escape
-		files="$folders"$(ls "${dir_suggest%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
-	elif [[ "$dir_suggest" == "/"* ]];
-	then
-		search_term="${dir_suggest/\/}"
-		search_escape
-		files=$(ls / | grep -v '\.$' | grep -- '^'"$search_term" | sort -n | sed 's/^/\//g')
-	elif [[ "$(ls)" == *"$dir_suggest"* ]]; # Directory in current pwd
-	then
-		search_term="$dir_suggest"
-		search_escape
-		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
-	fi
-	files="${files%%$'\n'*}"
-	files=$(printf '%q' "$files")
-	files="$files/" # Fix files with spaces
-	# Remove / if not directory or string empty
-	if ! [[ -d "$files" ]] || [[ -z "$files" ]];
-	then
-		files="${files:0:-1}"
+		_hist_args=""
+	else
+		_hist_args="$(history $_comp_hist | head -1 | cut -c 8-)"
 	fi
 }
 
-man_completion() {
+clear-screen() {
+	clear
+	printf '\e7'
+}
+
+# Meta
+accept-line() {
+	case "$_string" in
+		*"EOM"*"EOM"*|*"EOF"*"EOF"*) _reading=false ;;
+		*'\'|*"EOM"*|*"EOF"*) _string+=$'\n'
+			((_curpos+=1)) ;;
+		*)
+			if [[ $(bash -nc "$_string" 2>&1) == *'unexpected end of file'* ]];
+			then
+				_string+=$'\n'
+				((_curpos+=1))
+			else
+				echo
+				stty echo
+				history -s "$_string"
+				eval -- "$_string" # This continues to be bad
+				stty -echo
+				_reading=false
+				printf '\e7'
+				[[ "$_string" == *'bind'* ]] && compose_case # Recreate the case statement if the command has bind
+			fi ;;
+	esac
+}
+
+print_command_line() {
+	local temp_str
+
+	# This doesnt technichally need to be a different function but it
+	# reduced jitter to run it all into a variable and print all at once
+	# cat -v (considered harmful) is so that quoted inserts can work
+	# Also makes it slow, but thats for later
+	temp_str="${_string//$'\n'/$'\n'$_PS2exp}"
+	printf "\e8\e[?25l\e[K"
+	temp_str=$(cat -v <<<"$temp_str")
+	printf '%s%s%s%s\e[K\e8%s' "$_prompt" "$temp_str" "$_color" "${_post_prompt:${#_string}}" "$_prompt"
+	temp_str="${_string:0:$_curpos}"
+	temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
+	temp_str=$(cat -v <<<"$temp_str")
+	printf '%s\e[0m\e[?25h' "$temp_str"
+}
+
+# Completions
+comp_complete() {
+	man_completions "$_string"
+	subdir_completion
+	history_completion
+	case "${_string}" in
+	*' '|*' '*)
+		_post_prompt=$( <<<$'\n'"$_hist_args"$'\n'"$_man_args"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
+	*)
+		_post_prompt=$( <<<$'\n'"$_commands"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
+	esac 2>/dev/null
+	[[ "$_post_prompt" == *"''" ]] && _post_prompt="${_post_prompt:0:-2}"
+}
+
+man_completions() {
 	local man_string
+	local command_one
+	local command_end
+
 	man_string="$1"
 	command_one="${man_string%% *}"
 	command_end="${man_string##* }"
@@ -105,276 +279,88 @@ man_completion() {
 	then
 		if [[ "$OSTYPE" == *darwin* ]];
 		then
-			man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
+			_man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
 		else
-			man_args=$(man -Tascii "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
+			_man_args=$(man -Tascii "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' | sed 's/[^[:alpha:]]$//g' | grep -- '^-'| uniq)
 			# This take 0.3 seconds each for the bash page, of which 0.013 is the sorting
 			# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
 			# -Tascii take this down by ~0.030 but even then its borderline unusable, all bc of pointless formatting bs
 		fi
+		_temp=''
+		while IFS= read -r line; do
+			_temp+=$'\n'"${man_string% *} $line"
+		done <<< "$_man_args"
 	fi
+	_man_args="$_temp"
 }
 
-command_completion() {
-	case "${string//[[:alpha:]]}" in
-	*'| '*)
-		has_pipe=true
-		comp_string="${string##*| }" ;;
-	*'$( '*)
-		has_pipe=true
-		comp_string="${string##*'$( '}" ;;
-	*'& '*)
-		has_pipe=true
-		comp_string="${string##*'& '}" ;;
-	*)
-		has_pipe=false
-		comp_string="$string" ;;
-	esac
-	subdir_completion 2>/dev/null
-	history_completion #2>/dev/null
-	case "$comp_string" in
-	*' '|*' '*)
-		man_completion "$comp_string" 2>/dev/null
-		args="$history_args"$'\n'"$files"$'\n'"$man_args"
-		args=$(grep -F -m1 -- "${string##* }" <<<"$args")
-		suggest="${string% *} $args" ;;
-	*)
-		args="$history_args"$'\n'"$files"$'\n'"$commands"
-		args=$(grep -F -m1 -- $'\n'"${comp_string##* }" <<<"$args")
-		suggest="${string% *}$args" ;;
-	esac
-	post_prompt="$suggest"
-}
-
-self-insert() {
-	string="${string:0:$curpos}$mode${string:$curpos}"
-	((curpos+=1))
-}
-
-del_from_string() {
-	if [[ $curpos -ge 0 ]];
+subdir_completion() {
+	local dir_suggest
+	local search_term
+	
+	dir_suggest="${_string##* }"
+	# Subdirectories or pwd
+	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]];
 	then
-		string="${string:0:$curpos}${string:$(( curpos + 1 ))}"
-	fi
-}
-
-
-backspace_from_string() {
-	if [[ ${#string} -gt 0 ]] && [[ $curpos -gt 0 ]];
+		folders="${dir_suggest%'/'*}/"
+		search_term=$( printf '%q' "${dir_suggest/$folders}")
+		files="$folders"$(ls "${dir_suggest%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
+	elif [[ "$dir_suggest" == "/"* ]];
 	then
-		if [[ $curpos -ge 1 ]];
-		then
-			((curpos-=1))
-		fi
-		if [[ $curpos -ge 0 ]];
-		then
-			if [[ $curpos -ge $(( ${#string} - 1 )) ]];
-			then
-				string="${string:0:-1}"
-			else
-				string="${string:0:$curpos}${string:$(( curpos + 1 ))}"
-			fi
-		fi
-	fi
-}
-
-hist_suggest() {
-	set -o history
-	if [[ $histpos -le 0 ]]; then ((histpos=0)); fi
-	if [[ $histpos -ge $histmax ]]; then ((histpos=histmax)); fi
-	if [[ $histpos == 0 ]];
+		search_term=$( printf '%q' "${dir_suggest/\/}")
+		files=$(ls / | grep -v '\.$' | grep -- '^'"$search_term" | sort -n | sed 's/^/\//g')
+	elif [[ "$(ls)" == *"$dir_suggest"* ]]; # Directory in current pwd
 	then
-		suggest=""
-	else
-		suggest="$(history $histpos | head -1 | cut -c 8-)"
+		search_term=$( printf '%q' "$dir_suggest" )
+		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
 	fi
-	post_prompt="$suggest"
-}
-
-finish_complete() {
-	if [[ -n "${post_prompt:${#string}}" ]];
-	then
-		string="$post_prompt"
-		curpos=${#string}
-	fi
-}
-
-multi_check() {
-	#need to make this less suck
-	case "$string" in
-		*"EOM"*"EOM"*|*"EOF"*"EOF"*) reading=false ;;
-		*'\'|*"EOM"*|*"EOF"*) string+=$'\n'
-			((curpos+=1)) ;;
-		*)
-			if [[ $(bash -nc "$string" 2>&1) == *'unexpected end of file'* ]];
-			then
-				string+=$'\n'
-				((curpos+=1))
-			else
-				reading=false
-			fi ;;
-	esac
-}
-
-print_command_line() {
-	# This doesnt technichally need to be a different function but it
-	# reduced jitter to run it all into a variable and print all at once
-
-	temp_str="${string//$'\n'/$'\n'$PS2exp}"
-	printf "\e8\e[?25l\e[K"
-
-	printf '%s\e[K\e8%s' "$prompt$temp_str$color${post_prompt:${#string}}" "$prompt"
-
-	temp_str="${string:0:$curpos}"
-	#echo -n "${temp_str//$'\n'/$'\n'$PS2exp}"
-
-	printf '%s\e[0m\e[?25h' "${temp_str//$'\n'/$'\n'$PS2exp}"
-}
-
-prev-word() {
-	ctrl_left="${string:0:$curpos}"
-	ctrl_left="${ctrl_left%[^[:alnum:]]*}"
-	curpos="${#ctrl_left}"
-}
-
-next-word() {
-	ctrl_right="${string:$(( curpos + 1 ))} "
-	ctrl_right="${ctrl_right#*[^[:alnum:]]}"
-	curpos="$(( ${#string} - ${#ctrl_right} ))"
-}
-
-quoted-insert() {
-	read -rsn1 mode
-	self-insert
-	while true;
+	# Remove / if not directory or string empty
+	_file_args=''
+	while IFS= read -r line;
 	do
-		read -rsn1 -t 0.001 mode
-		if [[ -z "$mode" ]];
+		line=$(printf '%q' "$line")
+		if [[ -d "$line" ]] && [[ "$line" != *'/' ]];
 		then
-			return
-		else
-			self-insert
+			line="$line/"
 		fi
-	done	
+		_file_args+=$'\n'"${_string% *} $line"
+	done <<< "$files"
 }
 
-read_in_paste() {
-	# bad way to do direct read in, cry abt it
-	echo
-	echo 'reading in'
-	while true;
-	do
-		read -rsn1 -t 0.001 mode
-		if [[ -z "$mode" ]];
-		then
-			return
-		else
-			self-insert
-		fi
-	done
+history_completion() {
+	_hist_args=$( fc -l -r -n 1 | col -bx | sed 's/^ *//g' | grep -- $'\n'"$_string")
 }
 
-cursor_move() {
-	case "$mode" in
-		"[C") ((curpos+=1)) ;;
-		"[D") ((curpos-=1)) ;;
-	esac
-	if ((curpos<=0)); then curpos=0; fi
-	if ((curpos>=${#string})); then curpos=${#string}; fi
-}
+# Other
 
 main_loop() {
-	comp_running=true
-	while [[ $comp_running == true ]];
+	while true;
 	do
-		reading="true"
-		prompt="${PS1@P}"
-		PS2exp="${PS2@P}"
-		string=''
-		histmax=$(( $(wc -l "$HISTFILE" | awk '{print $1}') + 1 ))
-		histpos=0
+		_comp_hist=0
+		_curpos=0
+		_reading="true"
+		_prompt="${PS1@P}"
+		_PS2exp="${PS2@P}"
+		_string=''
+		_color="$(printf '\e[31m')"
+		_post_prompt=''
 
-		IFS=''
-		oldifs=$IFS
-		while [[ "$reading" == "true" ]];
+		while [[ "$_reading" == "true" ]];
 		do
-			printed_var=$(print_command_line)
-			echo -n "$printed_var"
-			read -rsn1 mode
-			case "$mode" in
-				# Escape characters
-				$'\e')
-					read -rsn2 mode
-					case "$mode" in
-						# Cursor
-						"[C") if [[ "$curpos" -ge "${#string}" ]]; then finish_complete; fi && cursor_move ;;
-						"[D") cursor_move ;;
-						'[A') ((histpos+=1)) && hist_suggest ;;
-						'[B') ((histpos-=1)) && hist_suggest ;;
-						'[1')	# Ctrl + arrows
-							read -rsn3 mode
-							case "$mode" in
-								';5C') next-word ;;
-								';5D') prev-word ;;
-							esac ;;
-						'[2')
-							clear
-							read_in_paste ;;
-						'[3')
-							if [[ ${#string} -gt 0 ]]; then
-								del_from_string
-							fi
-							read -rsn1 _ ;; # Get rid of ~ after delete
-						'[5')
-							histpos=$histmax
-							hist_suggest
-							read -rsn1 _ ;;
-						'[6')
-							histpos=0
-							hist_suggest
-							read -rsn1 _ ;;
-						'')
-							printf '' ;; # Single escape, useful for vi mode later
-					esac ;;
-				# Ctrl characters
-				$'\ca') curpos=0 ;;
-				$'\cc') ctrl-c ;; # This is mostly fallback, the actual thing for Ctrl c is the SIGINT trap above
-				$'\cd') [[ -z "$string" ]] && exit ;;
-				$'\ce') curpos=${#string} ;;
-				$'\c?'|$'\ch') backspace_from_string ;;
-				$'\cl') clear; printf '\e[H\e7' ;;
-				$'\co') reading=0 ;;
-				$'\cv') quoted-insert ;;
-				$'\c'*) printf '' ;; # This is redundant, ctrl codes cant be wildcarded
-				# Rest
-				$'\t') finish_complete && curpos=${#string} ;;
-				"") multi_check ;; # $'\n' doesnt work idk y
-				[[:print:]])
-					self-insert
-					command_completion ;;
-				#*) self-insert && command_completion ;;
-			esac
-			color=$c1
+			echo -n "$(print_command_line)"
+			IFS= read -rsn1 -d '' _char
+			eval -- "$linecomp_case" #2>/dev/null
 		done
-		printf "\n"
 
-		stty "$default_term_state"
-		set -o history
-		history -s "$string"
-		eval -- "$string" # I hate this, and you should know that i hate it
-		stty -echo
-
-		printf '\e7'
-		IFS=$oldifs
-		suggest=""
-		post_prompt=""
-		curpos=0
 	done
+	echo "$linecomp_case"
 }
 
-commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
-default_term_state=$(stty -g)
+_commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
+_default_term_state=$(stty -g)
+printf '\e7'
+printf '\e[?2004l' # Disable bracketed paste so we can handle rselves
 stty -echo
+compose_case
 main_loop
-stty "$default_term_state"
-printf "\nlinecomp exited"
+stty "$_default_term_state"
