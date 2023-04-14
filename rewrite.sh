@@ -26,7 +26,7 @@ compose_case() {
 	local raw_binds
 	local escape_binds
 	local ctrl_binds
-	local other_binds
+	local insert_binds
 	
 	raw_binds=$(
 		bind -p | grep -v '^#' | tr "'\"" "\"'"
@@ -49,7 +49,7 @@ compose_case() {
 
 		# Uncustomisables (EOF, etc)
 		cat <<-'EOF'
-			$'\cd') [[ -z "$_string" ]] && exit ;;
+			$'\004') [[ -z "$_string" ]] && exit ;;
 		EOF
 
 		# Escapes
@@ -89,7 +89,15 @@ compose_case() {
 self-insert() {
 	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
 	((_curpos+=1))
-	comp_complete
+	comp_complete 2>/dev/null
+}
+
+quoted-insert() {
+	read -rsn1 _char
+	read -rsn5 -t 0.005 _temp
+	_char="$_char$_temp"
+	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
+	((_curpos+=${#_char}))
 }
 
 backward-delete-char() {
@@ -102,6 +110,18 @@ backward-delete-char() {
 
 delete-char() {
 	_string="${_string:0:$_curpos}${_string:$((_curpos+1))}"
+}
+
+tilde-expand() {
+	if [[ "${_string:$_curpos:1}" == '~' ]];
+	then
+		_string="${string:0:$((_curpos))}$HOME${_string:$((_curpos+1))}"
+		((_curpos+=${#HOME}))
+	elif [[ "${_string:$((_curpos-1)):1}" == '~' ]];
+	then
+		_string="${string:0:$((_curpos-1))}$HOME${_string:$((_curpos))}"
+		((_curpos+=${#HOME}))
+	fi
 }
 
 # Cursor
@@ -144,6 +164,10 @@ end-of-line() {
 	_curpos=${#_string}
 }
 
+kill-line() {
+	_string="${_string:0:$_curpos}"
+}
+
 complete() {
 	if [[ -n "${_post_prompt// }" ]];
 	then
@@ -181,6 +205,11 @@ history_get() {
 	fi
 }
 
+clear-screen() {
+	clear
+	printf '\e7'
+}
+
 # Meta
 accept-line() {
 	case "$_string" in
@@ -200,32 +229,40 @@ accept-line() {
 				stty -echo
 				_reading=false
 				printf '\e7'
+				[[ "$_string" == *'bind'* ]] && compose_case # Recreate the case statement if the command has bind
 			fi ;;
 	esac
 }
 
 print_command_line() {
 	local temp_str
+
 	# This doesnt technichally need to be a different function but it
 	# reduced jitter to run it all into a variable and print all at once
+	# cat -v (considered harmful) is so that quoted inserts can work
+	# Also makes it slow, but thats for later
 	temp_str="${_string//$'\n'/$'\n'$_PS2exp}"
 	printf "\e8\e[?25l\e[K"
+	temp_str=$(cat -v <<<"$temp_str")
 	printf '%s%s%s%s\e[K\e8%s' "$_prompt" "$temp_str" "$_color" "${_post_prompt:${#_string}}" "$_prompt"
 	temp_str="${_string:0:$_curpos}"
-	printf '%s\e[0m\e[?25h' "${temp_str//$'\n'/$'\n'$_PS2exp}"
+	temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
+	temp_str=$(cat -v <<<"$temp_str")
+	printf '%s\e[0m\e[?25h' "$temp_str"
 }
 
 # Completions
 comp_complete() {
 	man_completions "$_string"
 	subdir_completion
+	history_completion
 	case "${_string}" in
 	*' '|*' '*)
-		_post_prompt=$( <<<$'\n'"$_man_args"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
+		_post_prompt=$( <<<$'\n'"$_hist_args"$'\n'"$_man_args"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
 	*)
 		_post_prompt=$( <<<$'\n'"$_commands"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
-	esac
-	_post_prompt=$(<<<"$_post_prompt" sed -e "s/''$//g")
+	esac 2>/dev/null
+	[[ "$_post_prompt" == *"''" ]] && _post_prompt="${_post_prompt:0:-2}"
 }
 
 man_completions() {
@@ -290,6 +327,10 @@ subdir_completion() {
 	done <<< "$files"
 }
 
+history_completion() {
+	_hist_args=$( fc -l -r -n 1 | col -bx | sed 's/^ *//g' | grep -- $'\n'"$_string")
+}
+
 # Other
 
 main_loop() {
@@ -318,6 +359,7 @@ main_loop() {
 _commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
 _default_term_state=$(stty -g)
 printf '\e7'
+printf '\e[?2004l' # Disable bracketed paste so we can handle rselves
 stty -echo
 compose_case
 main_loop
