@@ -220,11 +220,12 @@ comp_complete() {
 	man_completions "$_string"
 	subdir_completion
 	case "${_string}" in
-	*' '*|*' ')
+	*' '|*' '*)
 		_post_prompt=$( <<<$'\n'"$_man_args"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
 	*)
 		_post_prompt=$( <<<$'\n'"$_commands"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
 	esac
+	_post_prompt=$(<<<"$_post_prompt" sed -e "s/''$//g")
 }
 
 man_completions() {
