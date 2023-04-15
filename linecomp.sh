@@ -356,7 +356,7 @@ main_loop() {
 		do
 			echo -n "$(print_command_line)"
 			IFS= read -rsn1 -d '' _char
-			eval -- "$linecomp_case" 2>/dev/null
+			eval -- "$linecomp_case"
 		done
 
 	done
