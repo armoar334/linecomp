@@ -45,6 +45,8 @@ compose_case() {
 	)
 
 	linecomp_case=$(
+		echo "IFS= read -rsn1 -d '' _char"
+
 		echo 'case $_char in'
 
 		# Uncustomisables (EOF, etc)
@@ -73,7 +75,8 @@ compose_case() {
 		echo "${ctrl_binds//\\C-/\\c}" | sed -e 's/^/\t\$/g' -e 's/: /) /g' -e 's/$/ ;;/g' | tr '"' "'"
 		# Self-insertion characters
 
-		echo "${insert_binds//\"\\2/\$\"\\2}" | sed -e 's/^/\t/g' -e 's/: /) /g' -e 's/$/ ;;/g' -e 's/`/\\\`/g' | sed -e 's/" "/'\'' '\''/g' -e "s/'.''/\"\\'\"/g"
+		inset_binds="${insert_binds//\"\\2/\$\"\\2}" 
+		echo "${insert_binds//\\\\/\\}"	| sed -e 's/^/\t/g' -e 's/: /) /g' -e 's/$/ ;;/g' -e 's/`/\\\`/g' | sed -e 's/" "/'\'' '\''/g' -e "s/'.''/\"\\'\"/g"
 
 		echo -ne '\t'
 		echo '*) echo && echo "$_char" ;;' 
@@ -340,26 +343,28 @@ history_completion() {
 
 # Other
 
+main_func() {
+	_comp_hist=0
+	_curpos=0
+	_reading="true"
+	_prompt="${PS1@P}"
+	_PS2exp="${PS2@P}"
+	_string=''
+	_color="$(printf '\e[31m')"
+	_post_prompt=''
+
+	while [[ "$_reading" == "true" ]];
+	do
+		set -o history
+		echo -n "$(print_command_line)"
+		eval -- "$linecomp_case"
+	done
+}
+
 main_loop() {
 	while true;
 	do
-		_comp_hist=0
-		_curpos=0
-		_reading="true"
-		_prompt="${PS1@P}"
-		_PS2exp="${PS2@P}"
-		_string=''
-		_color="$(printf '\e[31m')"
-		_post_prompt=''
-
-		while [[ "$_reading" == "true" ]];
-		do
-			set -o history
-			echo -n "$(print_command_line)"
-			IFS= read -rsn1 -d '' _char
-			eval -- "$linecomp_case"
-		done
-
+		main_func
 	done
 	echo "$linecomp_case"
 }
