@@ -247,12 +247,12 @@ print_command_line() {
 	printf '%s' "$temp_str" | cat -v 
 	printf '%s%s\e[K\e8%s' "$_color" "${_post_prompt:${#_string}}" "$_prompt"
 
-	[[ $_curpos -ge 1 ]] && printf '\e[%sC' "$_curpos"
+	#[[ $_curpos -ge 1 ]] && printf '\e[%sC' "$_curpos"
 
 	printf '\e[0m\e[?25h'
-	#temp_str="${_string:0:$_curpos}"
-	#temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
-	#printf '%s' "$temp_str" | cat -v
+	temp_str="${_string:0:$_curpos}"
+	temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
+	printf '%s' "$temp_str" | cat -v
 }
 
 # Completions
@@ -354,6 +354,7 @@ main_loop() {
 
 		while [[ "$_reading" == "true" ]];
 		do
+			set -o history
 			echo -n "$(print_command_line)"
 			IFS= read -rsn1 -d '' _char
 			eval -- "$linecomp_case"
