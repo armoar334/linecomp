@@ -260,9 +260,12 @@ print_command_line() {
 
 # Completions
 comp_complete() {
-	man_completions "$_string"
+	if [[ "$_string" == *' '* ]];
+	then
+		man_completions "$_string"
+		history_completion # This doesnt get prioritised until the first space anyway so might as well
+	fi
 	subdir_completion
-	history_completion
 	case "${_string}" in
 	*' '|*' '*)
 		_post_prompt=$( <<<$'\n'"$_hist_args"$'\n'"$_man_args"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
@@ -313,11 +316,11 @@ subdir_completion() {
 		search_term=$( printf '%q' "${dir_suggest/$folders}")
 		files="$folders"$(ls "${dir_suggest%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
 	elif [[ "$dir_suggest" == "/"* ]];
-	then
+	then # Root
 		search_term=$( printf '%q' "${dir_suggest/\/}")
 		files=$(ls / | grep -v '\.$' | grep -- '^'"$search_term" | sort -n | sed 's/^/\//g')
 	elif [[ "$(ls)" == *"$dir_suggest"* ]]; # Directory in current pwd
-	then
+	then # Pwd
 		search_term=$( printf '%q' "$dir_suggest" )
 		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
 	fi
@@ -330,7 +333,12 @@ subdir_completion() {
 		then
 			line="$line/"
 		fi
-		_file_args+=$'\n'"${_string% *} $line"
+		if [[ "$_string" = *' '* ]];
+		then
+			_file_args+=$'\n'"${_string% *} $line"
+		else
+			_file_args+=$'\n'"$line"
+		fi
 	done <<< "$files"
 }
 
