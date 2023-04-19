@@ -80,11 +80,11 @@ compose_case() {
 		echo "${ctrl_binds//\\C-/\\c}" | sed -e 's/^/\t\$/g' -e 's/: /) /g' -e 's/$/ ;;/g' | tr '"' "'"
 		# Self-insertion characters
 
-		inset_binds="${insert_binds//\"\\2/\$\"\\2}" 
-		echo "${insert_binds//\\\\/\\}"	| sed -e 's/^/\t/g' -e 's/: /) /g' -e 's/$/ ;;/g' -e 's/`/\\\`/g' | sed -e 's/" "/'\'' '\''/g' -e "s/'.''/\"\\'\"/g"
+		insert_binds="${insert_binds//\"\\2/\$\"\\2}"
+		echo "${insert_binds//\\\\/\\}"	| sed -e 's/^/\t/g' -e 's/: /) /g' -e 's/$/ ;;/g' -e 's/`/\\\`/g' | sed -e 's/" "/'\'' '\''/g' -e "s/'.''/\"\\'\"/g" -e 's/\\'\`'/'\`'/g'
 
 		echo -ne '\t'
-		echo '*) echo && echo "$_char" ;;' 
+		echo '*) echo && echo "$_char" ;;'
 		
 		echo 'esac'
 	)
