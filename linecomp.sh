@@ -263,8 +263,8 @@ comp_complete() {
 	if [[ "$_string" == *' '* ]];
 	then
 		man_completions "$_string"
-		history_completion # This doesnt get prioritised until the first space anyway so might as well
 	fi
+	history_completion # This doesnt get prioritised until the first space anyway so might as well
 	subdir_completion
 	case "${_string}" in
 	*' '|*' '*)
