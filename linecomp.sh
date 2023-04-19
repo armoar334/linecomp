@@ -15,7 +15,7 @@ fi
 _histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
 
 
-trap "echo '^C' && printf '\e7' && _reading='false'" INT SIGINT
+#trap "" INT SIGINT
 trap "history -a && echo linecomp exited" EXIT
 
 compose_case() {
@@ -49,9 +49,14 @@ compose_case() {
 
 		echo 'case $_char in'
 
-		# Uncustomisables (EOF, etc)
+		# Uncustomisables (EOF, Ctrl-c, etc)
 		cat <<-'EOF'
 			$'\004') [[ -z "$_string" ]] && exit ;;
+			$'\cc')
+				echo '^C'
+				printf '\e7'
+				_reading='false'
+				echo -n "$(print_command_line)" ;;
 		EOF
 
 		# Escapes
@@ -226,12 +231,12 @@ accept-line() {
 				((_curpos+=1))
 			else
 				echo
-				stty echo
 				history -s "$_string"
+				stty "$_default_term_state"
 				eval -- "$_string" # This continues to be bad
-				stty -echo
-				_reading=false
+				stty "$_linecomp_term_state"
 				printf '\e7'
+				_reading=false
 				[[ "$_string" == *'bind'* ]] && compose_case # Recreate the case statement if the command has bind
 			fi ;;
 	esac
@@ -378,10 +383,15 @@ main_loop() {
 }
 
 _commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
-_default_term_state=$(stty -g)
+
+_default_term_state="$(stty -g)"
+
 printf '\e7'
 printf '\e[?2004l' # Disable bracketed paste so we can handle rselves
 stty -echo
+stty intr ''
+_linecomp_term_state="$(stty -g)"
+
 compose_case
 main_loop
 stty "$_default_term_state"
