@@ -203,6 +203,13 @@ previous-history() {
 	_curpos=${#_string}
 }
 
+operate-and-get-next() {
+	_string="$(history_get)"
+	accept-line	
+	((_comp_hist+=1))
+	_string="$(history_get)"	
+}
+
 history_get() {
 	set -o history
 	if [[ $_comp_hist == 0 ]];
@@ -265,17 +272,21 @@ print_command_line() {
 
 # Completions
 comp_complete() {
-	if [[ "$_string" == *' '* ]];
-	then
-		man_completions "$_string"
-	fi
+	case "$_string" in
+	*' '*)
+		man_completions "${_string##*| }" ;;
+		#man_completions "$_string"
+	*)
+		_com_args="$_commands" ;;
+	esac
+	
 	history_completion # This doesnt get prioritised until the first space anyway so might as well
 	subdir_completion
 	case "${_string}" in
 	*' '|*' '*)
-		_post_prompt=$( <<<$'\n'"$_hist_args"$'\n'"$_man_args"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
+		_post_prompt=$( <<<$'\n'"$_file_args"$'\n'"$_hist_args"$'\n'"$_man_args" grep -F -m1 -- "$_string") ;;
 	*)
-		_post_prompt=$( <<<$'\n'"$_commands"$'\n'"$_file_args" grep -F -m1 -- "$_string")	;;
+		_post_prompt=$( <<<$'\n'"$_com_args"$'\n'"$_file_args" grep -F -m1 -- "$_string");;
 	esac 2>/dev/null
 	[[ "$_post_prompt" == *"''" ]] && _post_prompt="${_post_prompt:0:-2}"
 }
@@ -303,7 +314,7 @@ man_completions() {
 		fi
 		_temp=''
 		while IFS= read -r line; do
-			_temp+=$'\n'"${man_string% *} $line"
+			_temp+=$'\n'"${_string% *} $line"
 		done <<< "$_man_args"
 	fi
 	_man_args="$_temp"
