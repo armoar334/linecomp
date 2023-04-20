@@ -351,7 +351,7 @@ subdir_completion() {
 		fi
 		case "$_string" in
 		*'\ '*)
-			_file_args+=$'\n'"${_string%% *[\\] *} $line" ;;
+			_file_args+=$'\n'"${_string% *[\\] *} $line" ;;
 		*' '*)
 			_file_args+=$'\n'"${_string%% *} $line" ;;
 		*)
