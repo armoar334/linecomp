@@ -337,6 +337,7 @@ subdir_completion() {
 	local search_term
 	
 	dir_suggest="${_string##*[^\\] }"
+	#dir_suggest="${_string##* }"
 	# Subdirectories or pwd
 	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]];
 	then
@@ -362,10 +363,10 @@ subdir_completion() {
 			line="$line/"
 		fi
 		case "$_string" in
-		*'\ '*)
-			_file_args+=$'\n'"${_string% *[\\] *} $line" ;;
+		#*'\ '*)
+		#	_file_args+=$'\n'"${_string% *[\\] *} $line" ;;
 		*' '*)
-			_file_args+=$'\n'"${_string%% *} $line" ;;
+			_file_args+=$'\n'"${_string% *} $line" ;;
 		*)
 			_file_args+=$'\n'"$line" ;;
 		esac
