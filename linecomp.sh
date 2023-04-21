@@ -112,7 +112,7 @@ bracketed-paste-begin() {
 	_temp=''
 	until [[ "$_temp" == *$'\e[201~' ]]
 	do
-		read -rsn1 -t 0.01 _char
+		IFS= read -rsn1 -t 0.01 _char
 		_temp+="$_char"
 	done
 	_temp="${_temp:0:-6}"
