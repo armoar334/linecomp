@@ -66,7 +66,7 @@ compose_case() {
 		# Sub-escapes
 		# None of this technichally needs to be indented but its easier to read for debugging
 		echo -e '\t\tread -rsn1 _char ' # Read one more untimed for manually input esc seqs
-		echo -e '\t\tread -rsn5 -t 0.005 _temp ' # Read 5 more timed for stuff like ctrl+arrows 
+		echo -e '\t\tread -rsn4 -t 0.005 _temp ' # Read 5 more timed for stuff like ctrl+arrows 
 		echo -e '\t\t_char="$_char$_temp"' # Not elegant, but mostly functional
 		echo -e '\t\tcase "$_char" in'
 		echo "${escape_binds//$'\n'\'\\e/$'\n'\'}" | sed -e "s/^/\t\t\t/g" -e 's/: /) /g' -e 's/\C-/\c/g' -e 's/$/ ;;/g'
@@ -106,6 +106,18 @@ quoted-insert() {
 	_char="$_char$_temp"
 	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
 	((_curpos+=${#_char}))
+}
+
+bracketed-paste-begin() {
+	_temp=''
+	until [[ "$_temp" == *$'\e[201~' ]]
+	do
+		read -rsn1 -t 0.01 _char
+		_temp+="$_char"
+	done
+	_temp="${_temp:0:-6}"
+	_string="${_string:0:$_curpos}$_temp${_string:$_curpos}"
+	((_curpos+="${#_temp}"))
 }
 
 backward-delete-char() {
@@ -400,7 +412,7 @@ _commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut
 _default_term_state="$(stty -g)"
 
 printf '\e7'
-printf '\e[?2004l' # Disable bracketed paste so we can handle rselves
+printf '\e[?2004h' # Disable bracketed paste so we can handle rselves
 stty -echo
 stty intr ''
 _linecomp_term_state="$(stty -g)"
