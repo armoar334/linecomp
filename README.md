@@ -12,7 +12,10 @@ It also means that implementing new readline commands is as easy as writing a fu
 This has been removed temporarily in favor of a faster, more reliable manpage-based approach  
 
 # usage
-source linecomp.sh at the end of your bashrc
+source linecomp.sh at the end of your bashrc e.g  
+```
+source ~/Repos/linecomp/linecomp.sh
+```
 
 # Features
 Subdirectory / Directory suggestion  
