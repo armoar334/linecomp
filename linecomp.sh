@@ -132,6 +132,10 @@ delete-char() {
 	_string="${_string:0:$_curpos}${_string:$((_curpos+1))}"
 }
 
+kill-word() {
+	_string="${_string% *}"
+}
+
 tilde-expand() {
 	if [[ "${_string:$_curpos:1}" == '~' ]];
 	then
@@ -413,7 +417,7 @@ _commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut
 _default_term_state="$(stty -g)"
 
 printf '\e7'
-printf '\e[?2004h' # Disable bracketed paste so we can handle rselves
+printf '\e[?2004h' # enable bracketed paste so we can handle rselves
 stty -echo
 stty intr ''
 _linecomp_term_state="$(stty -g)"
