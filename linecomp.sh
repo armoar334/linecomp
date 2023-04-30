@@ -69,7 +69,11 @@ compose_case() {
 		echo -e '\t\tread -rsn4 -t 0.005 _temp ' # Read 5 more timed for stuff like ctrl+arrows 
 		echo -e '\t\t_char="$_char$_temp"' # Not elegant, but mostly functional
 		echo -e '\t\tcase "$_char" in'
-		echo "${escape_binds//$'\n'\'\\e/$'\n'\'}" | sed -e "s/^/\t\t\t/g" -e 's/: /) /g' -e 's/\C-/\c/g' -e 's/$/ ;;/g'
+		escape_binds="${escape_binds//$'\n'\'\\e/$'\n'\'}"
+		escape_binds="${escape_binds//: /) }"
+		escape_binds="${escape_binds//\C-/\c}"
+		<<<"$escape_binds" sed -e "s/^/\t\t\t/g" -e 's/$/ ;;/g'
+		
 		# Multi ctrl/esc sequences are too much hassle atm, so ignore
 		echo -e '\t\tesac ;;'
 
@@ -412,11 +416,13 @@ main_loop() {
 	echo "$linecomp_case"
 }
 
+printf '\e7'
+echo -n "${PS1@P}"
+
 _commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
 
 _default_term_state="$(stty -g)"
 
-printf '\e7'
 printf '\e[?2004h' # enable bracketed paste so we can handle rselves
 stty -echo
 stty intr ''
