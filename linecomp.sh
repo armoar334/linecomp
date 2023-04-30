@@ -29,19 +29,19 @@ compose_case() {
 	local insert_binds
 	
 	raw_binds=$(
-		bind -p | grep -v '^#' | tr "'\"" "\"'"
+		bind -p | grep -a -v '^#' | tr "'\"" "\"'"
 	)
 	
 	escape_binds=$(
-		<<<"$raw_binds" grep -F '\e'
+		<<<"$raw_binds" grep -a -F '\e'
 	)
 	
 	ctrl_binds=$(
-		<<<"$raw_binds" grep -- '\''\C'		
+		<<<"$raw_binds" grep -a -- '\''\C'		
 	)
 	
 	insert_binds=$(
-		<<<"$raw_binds" grep -F 'self-insert'
+		<<<"$raw_binds" grep -a -F 'self-insert'
 	)
 
 	linecomp_case=$(
