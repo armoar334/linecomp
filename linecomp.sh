@@ -72,7 +72,9 @@ compose_case() {
 		escape_binds="${escape_binds//$'\n'\'\\e/$'\n'\'}"
 		escape_binds="${escape_binds//: /) }"
 		escape_binds="${escape_binds//\C-/\c}"
-		<<<"$escape_binds" sed -e "s/^/\t\t\t/g" -e 's/$/ ;;/g'
+		escape_binds="${escape_binds//$'\n'/ ;;$'\n'}"
+		escape_binds="${escape_binds//$'\n'/$'\n'$'\t'$'\t'$'\t'}"
+		echo "$escape_binds"
 		
 		# Multi ctrl/esc sequences are too much hassle atm, so ignore
 		echo -e '\t\tesac ;;'
@@ -428,6 +430,6 @@ stty -echo
 stty intr ''
 _linecomp_term_state="$(stty -g)"
 
-compose_case
+time compose_case
 main_loop
 stty "$_default_term_state"
