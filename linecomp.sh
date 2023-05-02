@@ -419,7 +419,7 @@ main_loop() {
 printf '\e7'
 echo -n "${PS1@P}"
 
-_commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2- )
+_commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d' ' -f2- )
 
 _default_term_state="$(stty -g)"
 
