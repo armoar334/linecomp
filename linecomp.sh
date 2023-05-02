@@ -430,6 +430,6 @@ stty -echo
 stty intr ''
 _linecomp_term_state="$(stty -g)"
 
-time compose_case
+compose_case
 main_loop
 stty "$_default_term_state"
