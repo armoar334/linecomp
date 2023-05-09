@@ -319,6 +319,10 @@ man_completions() {
 	local command_end
 
 	man_string="$1"
+	man_string="${man_string##*|}"
+	man_string="${man_string##*| }"
+	man_string="${man_string##*\$(}"
+	man_string="${man_string##*\$( }"
 	command_one="${man_string%% *}"
 	command_end="${man_string##* }"
 	if [[ "${man_string##* }" == '-'* ]] && [[ "${#command_end}" -le 1 ]];
