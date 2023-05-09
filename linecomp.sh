@@ -37,7 +37,7 @@ compose_case() {
 	)
 	
 	ctrl_binds=$(
-		<<<"$raw_binds" grep -a -- '\''\C'		
+		<<<"$raw_binds" grep -a -- '\''\C'
 	)
 	
 	insert_binds=$(
@@ -323,6 +323,8 @@ man_completions() {
 	man_string="${man_string##*| }"
 	man_string="${man_string##*\$(}"
 	man_string="${man_string##*\$( }"
+	man_string="${man_string##*\&}"
+	man_string="${man_string##*\& }"
 	command_one="${man_string%% *}"
 	command_end="${man_string##* }"
 	if [[ "${man_string##* }" == '-'* ]] && [[ "${#command_end}" -le 1 ]];
