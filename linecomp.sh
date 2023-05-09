@@ -352,38 +352,36 @@ man_completions() {
 
 subdir_completion() {
 	local dir_suggest
-	local search_term
-	
+	local last_arg
+
 	dir_suggest="${_string##*[^\\] }"
-	#dir_suggest="${_string##* }"
-	# Subdirectories or pwd
-	if [[ -d "${dir_suggest%'/'*}" ]] && [[ "$dir_suggest" == *"/"* ]];
-	then
-		folders="${dir_suggest%'/'*}/"
-		search_term=$( printf '%q' "${dir_suggest/$folders}")
-		files="$folders"$(ls "${dir_suggest%'/'*}" | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
-	elif [[ "$dir_suggest" == "/"* ]];
-	then # Root
-		search_term=$( printf '%q' "${dir_suggest/\/}")
-		files=$(ls / | grep -v '\.$' | grep -- '^'"$search_term" | sort -n )
-		files="${files//$\n/$\n\/}"
-	elif [[ "$(ls)" == *"$dir_suggest"* ]]; # Directory in current pwd
-	then # Pwd
-		search_term=$( printf '%q' "$dir_suggest" )
-		files=$(ls | grep -v '\.$' | grep -- '^'"$search_term" | sort -n)
-	fi
+	case "$dir_suggest" in
+		'~/'*)
+			case "${dir_suggest//[^\/]}" in
+				*'//')
+					dir_suggest="${dir_suggest:2}"
+					files=$(ls -bd ~/"${dir_suggest%/*}"/* | sort -n)
+					files="${files//$HOME/\~}" ;;
+				*)
+					files=$(ls -bd ~/* | sort -n)
+					files="${files//$HOME/\~}" ;;
+			esac ;;
+		*'/'*)
+			files="${dir_suggest//\\}"
+			files=$(ls -bd "${files%/*}"/* | sort -n) ;;
+		*)
+			files=$(ls | grep -v '\.$' | sort -n) ;; 
+	esac
+	
 	# Remove / if not directory or string empty
 	_file_args=''
 	while IFS= read -r line;
 	do
-		line=$(printf '%q' "$line")
-		if [[ -d "$line" ]] && [[ "$line" != *'/' ]];
+		if [[ -d "${line//\\}" ]] && [[ "$line" != *'/' ]];
 		then
 			line="$line/"
 		fi
 		case "$_string" in
-		#*'\ '*)
-		#	_file_args+=$'\n'"${_string% *[\\] *} $line" ;;
 		*' '*)
 			_file_args+=$'\n'"${_string% *} $line" ;;
 		*)
