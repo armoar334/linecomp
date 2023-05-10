@@ -436,6 +436,7 @@ _default_term_state="$(stty -g)"
 printf '\e[?2004h' # enable bracketed paste so we can handle rselves
 stty -echo
 stty intr ''
+shopt -s dotglob
 _linecomp_term_state="$(stty -g)"
 
 compose_case
