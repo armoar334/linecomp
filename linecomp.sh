@@ -362,27 +362,18 @@ subdir_completion() {
 			case "${dir_suggest//[^\/]}" in
 				*'//')
 					dir_suggest="${dir_suggest:2}"
-					files=$(ls -bd ~/"${dir_suggest%/*}"/* | sort -n)
+					files=$(printf '%q\n' ~/"${dir_suggest%/*}"/* | sort -n)
 					files="${files//$HOME/\~}" ;;
 				*)
-					files=$(ls -bd ~/* | sort -n)
+					files=$(printf '%q\n' ~/* | sort -n)
 					files="${files//$HOME/\~}" ;;
 			esac ;;
 		*'/'*)
-			files="${dir_suggest//\\}"
-			files=$(ls -bd "${files%/*}"/* | sort -n) ;;
+			files=$(printf '%q\n' "${dir_suggest%/*}"/* | sort -n) ;;
 		*)
-			files=$(ls -bd * | grep -v '\.$' | sort -n) ;; 
+			files=$(printf '%q\n' * | grep -v '\.$' | sort -n) ;; 
 	esac
 
-	files="${files//(/\\(}"
-	files="${files//)/\\)}"
-	
-	files="${files//[/\\[}"
-	files="${files//]/\\]}"
-	
-	files="${files//-/\\-}"
-	
 	# Remove / if not directory or string empty
 	_file_args=''
 	while IFS= read -r line;
