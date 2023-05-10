@@ -372,7 +372,7 @@ subdir_completion() {
 			files="${dir_suggest//\\}"
 			files=$(ls -bd "${files%/*}"/* | sort -n) ;;
 		*)
-			files=$(ls | grep -v '\.$' | sort -n) ;; 
+			files=$(ls -bd * | grep -v '\.$' | sort -n) ;; 
 	esac
 
 	files="${files//(/\\(}"
@@ -380,6 +380,8 @@ subdir_completion() {
 	
 	files="${files//[/\\[}"
 	files="${files//]/\\]}"
+	
+	files="${files//-/\\-}"
 	
 	# Remove / if not directory or string empty
 	_file_args=''
