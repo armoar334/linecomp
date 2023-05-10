@@ -301,7 +301,9 @@ comp_complete() {
 	*)
 		_com_args="$_commands" ;;
 	esac
-	
+	# Temp storage for color code remover
+	# ${test//[[:cntrl:]]\[[[0-9][0-9];*m}	
+	# ${test//[[:cntrl:]]\[[[0-9][0-9]m}	
 	history_completion # This doesnt get prioritised until the first space anyway so might as well
 	subdir_completion
 	case "${_string}" in
@@ -372,6 +374,12 @@ subdir_completion() {
 		*)
 			files=$(ls | grep -v '\.$' | sort -n) ;; 
 	esac
+
+	files="${files//(/\\(}"
+	files="${files//)/\\)}"
+	
+	files="${files//[/\\[}"
+	files="${files//]/\\]}"
 	
 	# Remove / if not directory or string empty
 	_file_args=''
