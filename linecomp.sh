@@ -260,7 +260,10 @@ accept-line() {
 				((_curpos+=1))
 			else
 				echo
-				history -s "$_string"
+				if [[ -n "$_string" ]];
+				then
+					history -s "$_string"
+				fi
 				stty "$_default_term_state"
 				eval -- "$_string" # This continues to be bad
 				stty "$_linecomp_term_state"
@@ -336,10 +339,10 @@ man_completions() {
 		if [[ "$OSTYPE" == *darwin* ]];
 		then
 			_man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n')
-			_man_args=$(<<< "${_man_args//[^[:alpha:]]$\n/$\n}" grep -- '^-'| uniq)
+			_man_args=$(<<< "${_man_args//[^[:alpha:]]$'\n'/$'\n'}" grep -- '^-'| uniq)
 		else
 			_man_args=$(man -Tascii "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' )
-			_man_args=$(<<< "${_man_args//[^[:alpha:]]$\n/$\n}" grep -- '^-'| uniq)
+			_man_args=$(<<< "${_man_args//[^[:alpha:]]$'\n'$'\n'}" grep -- '^-'| uniq)
 			# This take 0.3 seconds each for the bash page, of which 0.013 is the sorting
 			# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
 			# -Tascii take this down by ~0.030 but even then its borderline unusable, all bc of pointless formatting bs
