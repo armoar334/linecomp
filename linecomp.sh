@@ -103,7 +103,8 @@ compose_case() {
 self-insert() {
 	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
 	((_curpos+=1))
-	comp_complete 2>/dev/null
+	#comp_complete 2>/dev/null
+	comp_complete
 }
 
 quoted-insert() {
@@ -365,26 +366,22 @@ subdir_completion() {
 			case "${dir_suggest//[^\/]}" in
 				*'//')
 					dir_suggest="${dir_suggest:2}"
-					files=$(printf '%q\n' ~/"${dir_suggest%/*}"/* | sort -n)
+					files=$(printf '%q\n' ~/"${dir_suggest%/*}"/*/ ~/"${dir_suggest%/*}"/!(*/) | sort -n)
 					files="${files//$HOME/\~}" ;;
 				*)
-					files=$(printf '%q\n' ~/* | sort -n)
+					files=$(printf '%q\n' ~/*/ ~/!(*/) | sort -n)
 					files="${files//$HOME/\~}" ;;
 			esac ;;
 		*'/'*)
-			files=$(printf '%q\n' "${dir_suggest%/*}"/* | sort -n) ;;
+			files=$(printf '%q\n' "${dir_suggest%/*}"/*/ "${dir_suggest%/*}"/!(*/) | sort -n) ;;
 		*)
-			files=$(printf '%q\n' * | grep -v '\.$' | sort -n) ;; 
+			files=$(printf '%q\n' */ .!(*/) | sort -n) ;; 
 	esac
 
 	# Remove / if not directory or string empty
 	_file_args=''
 	while IFS= read -r line;
 	do
-		if [[ -d "${line//\\}" ]] && [[ "$line" != *'/' ]];
-		then
-			line="$line/"
-		fi
 		case "$_string" in
 		*' '*)
 			_file_args+=$'\n'"${_string% *} $line" ;;
@@ -436,7 +433,7 @@ _commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut
 
 _default_term_state="$(stty -g)"
 
-printf '\e[?2004h' # enable bracketed paste so we can handle rselves
+#printf '\e[?2004h' # enable bracketed paste so we can handle rselves
 stty -echo
 stty intr ''
 shopt -s dotglob
