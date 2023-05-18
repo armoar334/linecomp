@@ -103,7 +103,6 @@ compose_case() {
 self-insert() {
 	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
 	((_curpos+=1))
-	#comp_complete 2>/dev/null
 	comp_complete
 }
 
@@ -366,16 +365,16 @@ subdir_completion() {
 			case "${dir_suggest//[^\/]}" in
 				*'//')
 					dir_suggest="${dir_suggest:2}"
-					files=$(printf '%q\n' ~/"${dir_suggest%/*}"/*/ ~/"${dir_suggest%/*}"/!(*/) | sort -n)
+					files=$(printf '%q\n' ~/"${dir_suggest%/*}"/*/ ~/"${dir_suggest%/*}"/* )
 					files="${files//$HOME/\~}" ;;
 				*)
-					files=$(printf '%q\n' ~/*/ ~/!(*/) | sort -n)
+					files=$(printf '%q\n' ~/*/ ~/* )
 					files="${files//$HOME/\~}" ;;
 			esac ;;
 		*'/'*)
-			files=$(printf '%q\n' "${dir_suggest%/*}"/*/ "${dir_suggest%/*}"/!(*/) | sort -n) ;;
+			files=$(printf '%q\n' "${dir_suggest%/*}"/*/ "${dir_suggest%/*}"/* ) ;;
 		*)
-			files=$(printf '%q\n' */ .!(*/) | sort -n) ;; 
+			files=$(printf '%q\n' */ * ) ;; 
 	esac
 
 	# Remove / if not directory or string empty
