@@ -432,7 +432,7 @@ _commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut
 
 _default_term_state="$(stty -g)"
 
-#printf '\e[?2004h' # enable bracketed paste so we can handle rselves
+printf '\e[?2004h' # enable bracketed paste so we can handle rselves
 stty -echo
 stty intr ''
 shopt -s dotglob
