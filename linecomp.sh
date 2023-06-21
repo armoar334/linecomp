@@ -24,30 +24,20 @@ compose_case() {
 	# statement that can be used for the users input, therefore allowing for linecomp
 	# to be a drop in replacement for the default line-editor
 	local raw_binds
-	local escape_binds
-	local ctrl_binds
-	local insert_binds
 	
 	raw_binds=$(
 		bind -p | grep -a -v '^#' | tr "'\"" "\"'"
 	)
-	
-	escape_binds=$(
-		<<<"$raw_binds" grep -a -F '\e'
-	)
-	
-	ctrl_binds=$(
-		<<<"$raw_binds" grep -a -- '\''\C'
-	)
-	
-	insert_binds=$(
-		<<<"$raw_binds" grep -a -F 'self-insert'
-	)
 
 	linecomp_case=$(
-		echo "IFS= read -rsn1 -d '' _char"
-
-		echo 'case $_char in'
+		# yeah i know this could be all one printf, fuck off
+		printf '%s\n' '_key_done=false'
+		printf '%s\n' '_temp=""'
+		printf '%s\n%s\n' 'while [[ $_key_done = false ]]' 'do'
+		printf '%s\n' "IFS= read -rsn1 -d '' _char"
+		printf '%s\n' '_key_done=true'
+		printf '%s\n' '_temp="$_temp$_char"'
+		printf '%s\n' 'case $_temp in'
 
 		# Uncustomisables (EOF, Ctrl-c, etc)
 		cat <<-'EOF'
@@ -58,41 +48,19 @@ compose_case() {
 				_reading='false'
 				echo -n "$(print_command_line)" ;;
 		EOF
+		raw_binds="${raw_binds/$'\n'}"
+		raw_binds="${raw_binds//$'\n'/$'\n'\$}"
+		raw_binds="${raw_binds//\\C-/\\c}"
+		raw_binds="${raw_binds//: /) }"
+		raw_binds="${raw_binds//$'\n'/ ;;$'\n'}"
+		printf '%s\n' "$raw_binds ;;"
 
-		# Escapes
-		echo -ne '\t' 
-		echo '$'"'\e')"
-
-		# Sub-escapes
-		# None of this technichally needs to be indented but its easier to read for debugging
-		echo -e '\t\tread -rsn1 _char ' # Read one more untimed for manually input esc seqs
-		echo -e '\t\tread -rsn4 -t 0.005 _temp ' # Read 5 more timed for stuff like ctrl+arrows 
-		echo -e '\t\t_char="$_char$_temp"' # Not elegant, but mostly functional
-		echo -e '\t\tcase "$_char" in'
-		escape_binds="${escape_binds//$'\n'\'\\e/$'\n'\'}"
-		escape_binds="${escape_binds//: /) }"
-		escape_binds="${escape_binds//\C-/\c}"
-		escape_binds="${escape_binds//$'\n'/ ;;$'\n'}"
-		escape_binds="${escape_binds//$'\n'/$'\n'$'\t'$'\t'$'\t'}"
-		echo "$escape_binds"
-		
-		# Multi ctrl/esc sequences are too much hassle atm, so ignore
-		echo -e '\t\tesac ;;'
-
-		
-
-		echo -ne '\t'
-		# Ctrl characters
-		echo "${ctrl_binds//\\C-/\\c}" | sed -e 's/^/\t\$/g' -e 's/: /) /g' -e 's/$/ ;;/g' | tr '"' "'"
-		# Self-insertion characters
-
-		insert_binds="${insert_binds//\"\\2/\$\"\\2}"
-		echo "${insert_binds//\\\\/\\}"	| sed -e 's/^/\t/g' -e 's/: /) /g' -e 's/$/ ;;/g' -e 's/`/\\\`/g' | sed -e 's/" "/'\'' '\''/g' -e "s/'.''/\"\\'\"/g" -e 's/\\'\`'/'\`'/g'
-
-		echo -ne '\t'
-		echo '*) echo && echo "$_char" ;;'
-		
-		echo 'esac'
+		printf '%s\n' '*) _key_done=false ;;'
+		printf '%s\n' 'esac'
+		printf '%s\n' '[[ ${#_temp} -gt 6 ]] && _temp=""'
+		#printf '%s\n' 'echo $_temp'
+		printf '%s\n' 'done'
+		printf '%s\n' '_temp='
 	)
 
 }
@@ -442,3 +410,4 @@ _linecomp_term_state="$(stty -g)"
 compose_case
 main_loop
 stty "$_default_term_state"
+#echo "$linecomp_case"
