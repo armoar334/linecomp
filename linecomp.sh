@@ -328,6 +328,7 @@ subdir_completion() {
 	local last_arg
 
 	dir_suggest="${_string##*[^\\] }"
+	#echo; echo "$dir_suggest"; echo "${dir_suggest%/*}"
 	case "$dir_suggest" in
 		'~/'*)
 			case "${dir_suggest//[^\/]}" in
@@ -351,7 +352,7 @@ subdir_completion() {
 	do
 		case "$_string" in
 		*' '*)
-			_file_args+=$'\n'"${_string% *} $line" ;;
+			_file_args+=$'\n'"${_string%% *} $line" ;;
 		*)
 			_file_args+=$'\n'"$line" ;;
 		esac
