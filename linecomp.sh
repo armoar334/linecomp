@@ -286,6 +286,12 @@ comp_complete() {
 		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -F -- "$READLINE_LINE")
 		_color='31'
 	fi
+	temp_hist=$(history | cut -c 8- | tac | grep -m1 -F -- "$READLINE_LINE")
+	if [ -n "$temp_hist" ]
+	then
+		_post_prompt="$temp_hist"
+		_color='35'
+	fi
 }
 
 dir_suggest() {
