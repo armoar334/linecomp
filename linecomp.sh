@@ -273,14 +273,19 @@ comp_complete() {
 	# We sadly need it to interpret backslashes for directory names
 	read -a line_array <<<"$READLINE_LINE"
 	line_array=( "${line_array[@]// /\\ }" )
-	case "${line_array[-1]}" in
-		'-'*) 
-			man_completion "${line_array[0]}" "${line_array[-1]}"
-			_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_args" ;; # Fix after pipes later
-		*)
-			dir_suggest "${line_array[-1]}"
-			_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_path" ;;
-	esac
+	if [ "${#line_array[@]}" -gt 1 ]; then
+		case "${line_array[-1]}" in
+			'-'*) 
+				man_completion "${line_array[0]}" "${line_array[-1]}"
+				_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_args" ;; # Fix after pipes later
+			*)
+				dir_suggest "${line_array[-1]}"
+				_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_path" ;;
+		esac
+	else
+		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -F -- "$READLINE_LINE")
+		_color='31'
+	fi
 }
 
 dir_suggest() {
