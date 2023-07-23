@@ -1,6 +1,15 @@
 # linecomp
 Beta readline replacement and command suggestion in/for ``bash 4.0+``  
 
+
+##23/07/23
+linecomp v3 is now here!  
+Features:  
+ - Better support for Directory names with escaped spaces
+ - Independant coloring for each option! not everything is red now, and as ```$_color``` is just set to an ansi color code, suggestions can be cutomised to any color you would like
+ - _string and _curpos are now $READLINE_LINE and $READLINE_POINT, so that any custom function you may have affecting the content or cursor position in your prompt will now be functional
+
+
 ##14/04/23
 linecomp is now completely dependant on env for keybinds. This allows it to be easily used without having to go and manually modify the input case structure  
 It also means that implementing new readline commands is as easy as writing a fucntion of the same name, allowing features to be added at a much faster rate than previously possible!

@@ -41,7 +41,7 @@ compose_case() {
 
 		# Uncustomisables (EOF, Ctrl-c, etc)
 		cat <<-'EOF'
-			$'\004') [[ -z "$_string" ]] && exit ;;
+			$'\004') [[ -z "$READLINE_LINE" ]] && exit ;;
 			$'\cc')
 				echo '^C'
 				printf '\e7'
@@ -69,8 +69,8 @@ compose_case() {
 # Text manipulation
 
 self-insert() {
-	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
-	((_curpos+=1))
+	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}$_char${READLINE_LINE:$READLINE_POINT}"
+	((READLINE_POINT+=1))
 	comp_complete
 }
 
@@ -78,8 +78,8 @@ quoted-insert() {
 	read -rsn1 _char
 	read -rsn5 -t 0.005 _temp
 	_char="$_char$_temp"
-	_string="${_string:0:$_curpos}$_char${_string:$_curpos}"
-	((_curpos+=${#_char}))
+	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}$_char${READLINE_LINE:$READLINE_POINT}"
+	((READLINE_POINT+=${#_char}))
 }
 
 bracketed-paste-begin() {
@@ -90,87 +90,87 @@ bracketed-paste-begin() {
 		_temp+="$_char"
 	done
 	_temp="${_temp:0:-6}"
-	_string="${_string:0:$_curpos}$_temp${_string:$_curpos}"
-	((_curpos+="${#_temp}"))
+	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}$_temp${READLINE_LINE:$READLINE_POINT}"
+	((READLINE_POINT+="${#_temp}"))
 }
 
 backward-delete-char() {
-	if [[ $_curpos -gt 0 ]];
+	if [[ $READLINE_POINT -gt 0 ]];
 	then
-		_string="${_string:0:$((_curpos-1))}${_string:$_curpos}"
-		((_curpos-=1))
+		READLINE_LINE="${READLINE_LINE:0:$((READLINE_POINT-1))}${READLINE_LINE:$READLINE_POINT}"
+		((READLINE_POINT-=1))
 	fi
 }
 
 delete-char() {
-	_string="${_string:0:$_curpos}${_string:$((_curpos+1))}"
+	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}${READLINE_LINE:$((READLINE_POINT+1))}"
 }
 
 kill-word() {
-	_string="${_string% *}"
+	READLINE_LINE="${READLINE_LINE% *}"
 }
 
 tilde-expand() {
-	if [[ "${_string:$_curpos:1}" == '~' ]];
+	if [[ "${READLINE_LINE:$READLINE_POINT:1}" == '~' ]];
 	then
-		_string="${_string:0:$((_curpos))}$HOME${_string:$((_curpos+1))}"
-		((_curpos+=${#HOME}))
-	elif [[ "${_string:$((_curpos-1)):1}" == '~' ]];
+		READLINE_LINE="${READLINE_LINE:0:$((READLINE_POINT))}$HOME${READLINE_LINE:$((READLINE_POINT+1))}"
+		((READLINE_POINT+=${#HOME}))
+	elif [[ "${READLINE_LINE:$((READLINE_POINT-1)):1}" == '~' ]];
 	then
-		_string="${_string:0:$((_curpos-1))}$HOME${_string:$((_curpos))}"
-		((_curpos+=${#HOME}))
+		READLINE_LINE="${READLINE_LINE:0:$((READLINE_POINT-1))}$HOME${READLINE_LINE:$((READLINE_POINT))}"
+		((READLINE_POINT+=${#HOME}))
 	fi
 }
 
 # Cursor
 forward-char() {
-	if [[ $_curpos -lt ${#_string} ]];
+	if [[ $READLINE_POINT -lt ${#READLINE_LINE} ]];
 	then
-		((_curpos+=1))
+		((READLINE_POINT+=1))
 	fi
 }
 
 forward-word() {
-	_temp="${_string:$(( _curpos + 1 ))} "
+	_temp="${READLINE_LINE:$(( READLINE_POINT + 1 ))} "
 	_temp="${_temp#*[^[:alnum:]]}"
-	_curpos="$(( ${#_string} - ${#_temp} ))"
+	READLINE_POINT="$(( ${#READLINE_LINE} - ${#_temp} ))"
 }
 
 backward-char() {
-	if [[ $_curpos -gt 0 ]];
+	if [[ $READLINE_POINT -gt 0 ]];
 	then
-		((_curpos-=1))
+		((READLINE_POINT-=1))
 	fi
 }
 
 backward-word() {
-	_temp="${_string:0:$_curpos}"
+	_temp="${READLINE_LINE:0:$READLINE_POINT}"
 	_temp="${_temp%[^[:alnum:]]*}"
 	if ! [[ "$_temp" == *' '* ]];
 	then
-		_curpos=0
+		READLINE_POINT=0
 	else
-		_curpos=${#_temp}
+		READLINE_POINT=${#_temp}
 	fi
 }
 
 beginning-of-line() {
-	_curpos=0
+	READLINE_POINT=0
 }
 
 end-of-line() {
-	_curpos=${#_string}
+	READLINE_POINT=${#READLINE_LINE}
 }
 
 kill-line() {
-	_string="${_string:0:$_curpos}"
+	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}"
 }
 
 complete() {
 	if [[ "$_post_prompt" != *' ' ]];
 	then
-		_string="$_post_prompt"
-		_curpos=${#_string}
+		READLINE_LINE="$_post_prompt"
+		READLINE_POINT=${#READLINE_LINE}
 	fi
 }
 
@@ -179,8 +179,8 @@ complete() {
 next-history() {
 	((_comp_hist-=1))
 	if [[ $_comp_hist -le 0 ]]; then _comp_hist=0; fi
-	_string="$(history_get)"
-	_curpos=${#_string}
+	READLINE_LINE="$(history_get)"
+	READLINE_POINT=${#READLINE_LINE}
 }
 
 previous-history() {
@@ -189,15 +189,15 @@ previous-history() {
 	then
 		_comp_hist=$_histmax
 	fi
-	_string="$(history_get)"
-	_curpos=${#_string}
+	READLINE_LINE="$(history_get)"
+	READLINE_POINT=${#READLINE_LINE}
 }
 
 operate-and-get-next() {
-	_string="$(history_get)"
+	READLINE_LINE="$(history_get)"
 	accept-line	
 	((_comp_hist+=1))
-	_string="$(history_get)"	
+	READLINE_LINE="$(history_get)"	
 }
 
 history_get() {
@@ -217,27 +217,27 @@ clear-screen() {
 
 # Meta
 accept-line() {
-	case "$_string" in
+	case "$READLINE_LINE" in
 		*"EOM"*"EOM"*|*"EOF"*"EOF"*) _reading=false ;;
-		*'\'|*"EOM"*|*"EOF"*) _string+=$'\n'
-			((_curpos+=1)) ;;
+		*'\'|*"EOM"*|*"EOF"*) READLINE_LINE+=$'\n'
+			((READLINE_POINT+=1)) ;;
 		*)
-			if [[ $(bash -nc "$_string" 2>&1) == *'unexpected end of file'* ]];
+			if [[ $(bash -nc "$READLINE_LINE" 2>&1) == *'unexpected end of file'* ]];
 			then
-				_string+=$'\n'
-				((_curpos+=1))
+				READLINE_LINE+=$'\n'
+				((READLINE_POINT+=1))
 			else
 				echo
-				if [[ -n "$_string" ]];
+				if [[ -n "$READLINE_LINE" ]];
 				then
-					history -s "$_string"
+					history -s "$READLINE_LINE"
 				fi
 				stty "$_default_term_state"
-				eval -- "$_string" # This continues to be bad
+				eval -- "$READLINE_LINE" # This continues to be bad
 				stty "$_linecomp_term_state"
 				printf '\e7'
 				_reading=false
-				[[ "$_string" == *'bind'* ]] && compose_case # Recreate the case statement if the command has bind
+				[[ "$READLINE_LINE" == *'bind'* ]] && compose_case # Recreate the case statement if the command has bind
 			fi ;;
 	esac
 }
@@ -253,15 +253,15 @@ print_command_line() {
 	#echo; echo "${#temp_str}"
 	#echo "${#line_array[-1]}"
 
-	temp_str="${_string//$'\n'/$'\n'$_PS2exp}"
+	temp_str="${READLINE_LINE//$'\n'/$'\n'$_PS2exp}"
 	printf '\e8\e[?25l\e[K%s' "$_prompt"
 	printf '%s' "$temp_str" | cat -v 
-	printf '\e[%sm%s\e[K\e8%s' "$_color" "${_post_prompt:${#_string}}" "$_prompt"
+	printf '\e[%sm%s\e[K\e8%s' "$_color" "${_post_prompt:${#READLINE_LINE}}" "$_prompt"
 
-	#[[ $_curpos -ge 1 ]] && printf '\e[%sC' "$_curpos"
+	#[[ $READLINE_POINT -ge 1 ]] && printf '\e[%sC' "$READLINE_POINT"
 
 	printf '\e[0m\e[?25h'
-	temp_str="${_string:0:$_curpos}"
+	temp_str="${READLINE_LINE:0:$READLINE_POINT}"
 	temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
 	printf '%s' "$temp_str" | cat -v
 
@@ -271,7 +271,7 @@ print_command_line() {
 
 comp_complete() {
 	# We sadly need it to interpret backslashes for directory names
-	read -a line_array <<<"$_string"
+	read -a line_array <<<"$READLINE_LINE"
 	line_array=( "${line_array[@]// /\\ }" )
 	case "${line_array[-1]}" in
 		'-'*) 
@@ -351,11 +351,11 @@ man_completion() {
 
 main_func() {
 	_comp_hist=0
-	_curpos=0
+	READLINE_POINT=0
 	_reading="true"
 	_prompt="${PS1@P}"
 	_PS2exp="${PS2@P}"
-	_string=''
+	READLINE_LINE=''
 	_color='31'
 	_post_prompt=''
 
