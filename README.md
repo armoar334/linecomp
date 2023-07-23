@@ -2,7 +2,7 @@
 Beta readline replacement and command suggestion in/for ``bash 4.0+``  
 
 
-##23/07/23
+## 23/07/23
 linecomp v3 is now here!  
 Features:  
  - Better support for Directory names with escaped spaces
@@ -10,12 +10,12 @@ Features:
  - _string and _curpos are now $READLINE_LINE and $READLINE_POINT, so that any custom function you may have affecting the content or cursor position in your prompt will now be functional
 
 
-##14/04/23
+## 14/04/23
 linecomp is now completely dependant on env for keybinds. This allows it to be easily used without having to go and manually modify the input case structure  
 It also means that implementing new readline commands is as easy as writing a fucntion of the same name, allowing features to be added at a much faster rate than previously possible!
 
 
-~~##31/01/23~~
+~~## 31/01/23~~
 ~~We now have support for `bash-completions`!~~  
 ~~Unfortunately its a little slow, but that should be fixed in the coming weeks~~  
 This has been removed temporarily in favor of a faster, more reliable manpage-based approach  
