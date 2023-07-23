@@ -284,7 +284,7 @@ comp_complete() {
 		esac
 	else
 		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -F -- "$READLINE_LINE")
-		_color='31'
+		_color='90'
 	fi
 	temp_hist=$(history | cut -c 8- | tac | grep -m1 -F -- "$READLINE_LINE")
 	if [ -n "$temp_hist" ]
@@ -308,6 +308,8 @@ dir_suggest() {
 	
 	complete_path="${temp_path%/*}"
 	unfinish_path="${temp_path##*/}"
+
+	echo; echo "$complete_path"
 
 	# If its a directory
 	if [ -d "${complete_path//\\ / }" ]; then
