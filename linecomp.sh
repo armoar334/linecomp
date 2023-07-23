@@ -290,10 +290,10 @@ comp_complete() {
 				_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_path" ;;
 		esac
 	else
-		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -F -- "$READLINE_LINE")
+		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -- "^$READLINE_LINE")
 		_color="$_command_color"
 	fi
-	temp_hist=$(history | cut -c 8- | tac | grep -m1 -F -- "$READLINE_LINE")
+	temp_hist=$(history | cut -c 8- | tac | grep -m1 -- "^$READLINE_LINE")
 	if [ -n "$temp_hist" ]
 	then
 		_post_prompt="$temp_hist"
@@ -388,6 +388,7 @@ main_func() {
 main_loop() {
 	while true;
 	do
+		eval "$PROMPT_COMMAND"
 		main_func
 	done
 	echo "$linecomp_case"
