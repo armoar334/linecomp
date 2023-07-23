@@ -312,7 +312,7 @@ dir_suggest() {
 	fi
 	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$unfinish_path")
 
-	if [ -d "${return_path//\\ / }" ]; then
+	if [ -d "${return_path//\\/}" ]; then
 		_color='34'
 	else
 		_color='32'
