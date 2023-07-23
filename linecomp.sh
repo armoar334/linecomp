@@ -290,10 +290,10 @@ comp_complete() {
 				_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_path" ;;
 		esac
 	else
-		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -- "^$READLINE_LINE")
+		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -- "^$READLINE_LINE") 2>/dev/null
 		_color="$_command_color"
 	fi
-	temp_hist=$(history | cut -c 8- | tac | grep -m1 -- "^$READLINE_LINE")
+	temp_hist=$(history | cut -c 8- | tac | grep -m1 -- "^$READLINE_LINE") 2>/dev/null
 	if [ -n "$temp_hist" ]
 	then
 		_post_prompt="$temp_hist"
@@ -323,7 +323,7 @@ dir_suggest() {
 	else
 		files=$(printf '%q\n' */ *)
 	fi
-	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path")
+	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path") 2>/dev/null
 
 	if [ -d "${return_path//\\/}" ]; then
 		_color="$_directory_color"
@@ -361,7 +361,7 @@ man_completion() {
 		_temp=''
 		_man_args=$(printf '%s' "$_man_args" | sed -e 's/[^[:alnum:]]$//g')
 	fi
-	return_args=$(printf '\n%s' "$_man_args" | grep -m1 -F -- "$opt_string")
+	return_args=$(printf '\n%s' "$_man_args" | grep -m1 -F -- "$opt_string") 2>/dev/null
 	_color="$_option_color"
 }
 
