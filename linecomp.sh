@@ -3,6 +3,13 @@
 # linecomp V2
 # readline "replacment" for bash
 
+_directory_color='34'
+_history_color='35'
+_command_color='90'
+_option_color='33'
+_file_color='32'
+
+
 # Check that current shell is bash
 # This works under zsh and crashes out on fish, so p much serves its purpose
 if [[ "$0" != *"bash"* ]];
@@ -284,13 +291,13 @@ comp_complete() {
 		esac
 	else
 		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -F -- "$READLINE_LINE")
-		_color='90'
+		_color="$_command_color"
 	fi
 	temp_hist=$(history | cut -c 8- | tac | grep -m1 -F -- "$READLINE_LINE")
 	if [ -n "$temp_hist" ]
 	then
 		_post_prompt="$temp_hist"
-		_color='35'
+		_color="$_history_color"
 	fi
 }
 
@@ -309,8 +316,6 @@ dir_suggest() {
 	complete_path="${temp_path%/*}"
 	unfinish_path="${temp_path##*/}"
 
-	echo; echo "$complete_path"
-
 	# If its a directory
 	if [ -d "${complete_path//\\ / }" ]; then
 		files=$(printf '%q\n' "${complete_path//\\ / }"/*/ "${complete_path//\\ / }"/* )
@@ -321,9 +326,9 @@ dir_suggest() {
 	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$unfinish_path")
 
 	if [ -d "${return_path//\\/}" ]; then
-		_color='34'
+		_color="$_directory_color"
 	else
-		_color='32'
+		_color="$_file_color"
 	fi
 
 	if [ "$tilde_yes" = true ]; then
@@ -357,7 +362,7 @@ man_completion() {
 		_man_args=$(printf '%s' "$_man_args" | sed -e 's/[^[:alnum:]]$//g')
 	fi
 	return_args=$(printf '\n%s' "$_man_args" | grep -m1 -F -- "$opt_string")
-	_color='33'
+	_color="$_option_color"
 }
 
 # Other
