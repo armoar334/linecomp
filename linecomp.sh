@@ -323,7 +323,7 @@ dir_suggest() {
 	else
 		files=$(printf '%q\n' */ *)
 	fi
-	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$unfinish_path")
+	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path")
 
 	if [ -d "${return_path//\\/}" ]; then
 		_color="$_directory_color"
