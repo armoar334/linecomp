@@ -167,7 +167,7 @@ kill-line() {
 }
 
 complete() {
-	if [[ "$_post_prompt" != *' ' ]];
+	if [[ -n "${_post_prompt// }" ]];
 	then
 		_string="$_post_prompt"
 		_curpos=${#_string}
@@ -249,14 +249,11 @@ print_command_line() {
 	# reduced jitter to run it all into a variable and print all at once
 	# cat -v (considered harmful) is so that quoted inserts can work
 	# Also makes it slow, but thats for later
-	#temp_str="${line_array[*]:0:${#line_array[@]}-1}"
-	#echo; echo "${#temp_str}"
-	#echo "${#line_array[-1]}"
 
 	temp_str="${_string//$'\n'/$'\n'$_PS2exp}"
 	printf '\e8\e[?25l\e[K%s' "$_prompt"
 	printf '%s' "$temp_str" | cat -v 
-	printf '\e[%sm%s\e[K\e8%s' "$_color" "${_post_prompt:${#_string}}" "$_prompt"
+	printf '%s%s\e[K\e8%s' "$_color" "${_post_prompt:${#_string}}" "$_prompt"
 
 	#[[ $_curpos -ge 1 ]] && printf '\e[%sC' "$_curpos"
 
@@ -264,87 +261,109 @@ print_command_line() {
 	temp_str="${_string:0:$_curpos}"
 	temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
 	printf '%s' "$temp_str" | cat -v
-
 }
 
 # Completions
-
 comp_complete() {
-	# We sadly need it to interpret backslashes for directory names
-	read -a line_array <<<"$_string"
-	line_array=( "${line_array[@]// /\\ }" )
-	case "${line_array[-1]}" in
-		'-'*) 
-			man_completion "${line_array[0]}" "${line_array[-1]}"
-			_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_args" ;; # Fix after pipes later
-		*)
-			dir_suggest "${line_array[-1]}"
-			_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_path" ;;
+	case "$_string" in
+	*' '*)
+		man_completions "${_string##*| }" ;;
+		#man_completions "$_string"
+	*)
+		_com_args="$_commands" ;;
 	esac
+	# Temp storage for color code remover
+	# ${test//[[:cntrl:]]\[[[0-9][0-9];*m}	
+	# ${test//[[:cntrl:]]\[[[0-9][0-9]m}	
+	history_completion # This doesnt get prioritised until the first space anyway so might as well
+	subdir_completion
+	case "${_string}" in
+	*' '|*' '*)
+		_post_prompt=$( <<<$'\n'"$_file_args"$'\n'"$_hist_args"$'\n'"$_man_args" grep -F -m1 -- "$_string") ;;
+	*)
+		_post_prompt=$( <<<$'\n'"$_com_args"$'\n'"$_file_args" grep -F -m1 -- "$_string");;
+	esac 2>/dev/null
+	[[ "$_post_prompt" == *"''" ]] && _post_prompt="${_post_prompt:0:-2}"
 }
 
-dir_suggest() {
-	local temp_path="$1"
-	local tilde_yes=false
-	local complete_path
-	local unfinish_path
-	local files
-	
-	if [[ "$temp_path" == '~/'* ]]; then
-		tilde_yes=true
-		temp_path="${temp_path/~\//"$HOME"\/}"
-	fi
-	
-	complete_path="${temp_path%/*}"
-	unfinish_path="${temp_path##*/}"
-
-	# If its a directory
-	if [ -d "${complete_path//\\ / }" ]; then
-		files=$(printf '%q\n' "${complete_path//\\ / }"/*/ "${complete_path//\\ / }"/* )
-	# If it isnt yet (current folder)
-	else
-		files=$(printf '%q\n' */ *)
-	fi
-	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$unfinish_path")
-
-	if [ -d "${return_path//\\ / }" ]; then
-		_color='34'
-	else
-		_color='32'
-	fi
-
-	if [ "$tilde_yes" = true ]; then
-		return_path="${return_path/"$HOME"\//~\/}"
-	fi
-
-}
-
-man_completion() {
+man_completions() {
 	local man_string
-	local opt_string
+	local command_one
+	local command_end
 
 	man_string="$1"
-	opt_string="$2"
-
-	if [[ "${#opt_string}" -le 1 ]];
+	man_string="${man_string##*|}"
+	man_string="${man_string##*| }"
+	man_string="${man_string##*\$(}"
+	man_string="${man_string##*\$( }"
+	man_string="${man_string##*\&}"
+	man_string="${man_string##*\& }"
+	command_one="${man_string%% *}"
+	command_end="${man_string##* }"
+	if [[ "${man_string##* }" == '-'* ]] && [[ "${#command_end}" -le 1 ]];
+	# IK there are commands that dont start with - but thats for later
 	# Command length just makes sure it doesnt re-check every time, mega speed increase
 	then
 		if [[ "$OSTYPE" == *darwin* ]];
 		then
-			_man_args=$(man "$man_string" | col -bx | grep -F '-' | tr ' ' $'\n')
+			_man_args=$(man "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n')
 			_man_args=$(<<< "${_man_args//[^[:alpha:]]$'\n'/$'\n'}" grep -- '^-'| uniq)
 		else
-			_man_args=$(man -Tascii "$man_string" | col -bx | grep -F '-' | tr ' ' $'\n' )
+			_man_args=$(man -Tascii "$command_one" | col -bx | grep -F '-' | tr ' ' $'\n' )
 			_man_args=$(<<< "${_man_args//[^[:alpha:]]$'\n'$'\n'}" grep -- '^-'| uniq)
 			# This take 0.3 seconds each for the bash page, of which 0.013 is the sorting
 			# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
 			# -Tascii take this down by ~0.030 but even then its borderline unusable, all bc of pointless formatting bs
 		fi
 		_temp=''
-		_man_args=$(printf '%s' "$_man_args" | sed -e 's/[^[:alnum:]]$//g')
+		while IFS= read -r line; do
+			_temp+=$'\n'"${_string% *} $line"
+		done <<< "$_man_args"
 	fi
-	return_args=$(printf '\n%s' "$_man_args" | grep -m1 -F -- "$opt_string")
-	_color='33'
+	_man_args="$_temp"
+}
+
+subdir_completion() {
+	local dir_suggest
+	local last_arg
+
+	dir_suggest="${_string##*[^\\] }"
+	#echo; echo "$dir_suggest"; echo "${dir_suggest%/*}"
+	case "$dir_suggest" in
+		'~/'*)
+			case "${dir_suggest//[^\/]}" in
+				*'//')
+					dir_suggest="${dir_suggest:2}"
+					files=$(printf '%q\n' ~/"${dir_suggest%/*}"/*/ ~/"${dir_suggest%/*}"/* )
+					files="${files//$HOME/\~}" ;;
+				*)
+					files=$(printf '%q\n' ~/*/ ~/* )
+					files="${files//$HOME/\~}" ;;
+			esac ;;
+		*'/'*)
+			files=$(printf '%q\n' "${dir_suggest%/*}"/*/ "${dir_suggest%/*}"/* ) ;;
+		*)
+			files=$(printf '%q\n' */ * ) ;; 
+	esac
+
+	# Remove / if not directory or string empty
+	_file_args=''
+	while IFS= read -r line;
+	do
+		case "$_string" in
+		*' '*)
+			_file_args+=$'\n'"${_string%% *} $line" ;;
+		*)
+			_file_args+=$'\n'"$line" ;;
+		esac
+	done <<< "$files"
+}
+
+history_completion() {
+	if [[ "${#_string}" -le 1 ]];
+	then
+		_hist_args=$( fc -l -r -n 1 | col -bx | sed 's/^ *//g' | grep -- $'\n'"$_string")
+	fi
 }
 
 # Other
@@ -356,7 +375,7 @@ main_func() {
 	_prompt="${PS1@P}"
 	_PS2exp="${PS2@P}"
 	_string=''
-	_color='31'
+	_color="$(printf '\e[31m')"
 	_post_prompt=''
 
 	while [[ "$_reading" == "true" ]];
