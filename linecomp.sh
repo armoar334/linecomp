@@ -37,7 +37,6 @@ compose_case() {
 	)
 
 	linecomp_case=$(
-		# yeah i know this could be all one printf, fuck off
 		cat <<-'EOF'
 		_key_done=false
 		_temp=""
@@ -53,7 +52,7 @@ compose_case() {
 		cat <<-'EOF'
 			$'\004') [[ -z "$READLINE_LINE" ]] && exit ;;
 			$'\cc')
-				echo '^C'
+				printf '%s\n' '^C'
 				printf '\e7'
 				_reading='false'
 				echo -n "$(print_command_line)" ;;
@@ -328,9 +327,8 @@ dir_suggest() {
 	else
 		files=$(printf '%q\n' */ *)
 	fi
-	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path") 2>/dev/null
-	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path") 2>/dev/null
-
+	#return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path") 2>/dev/null
+	return_path=$(while IFS= read -r line; do if [[ "$line" == "$temp_path"* ]]; then printf '%s\n' "$line"; break; fi; done <<<"$files") # This is probably ass but grep is annoying bc of requiring regex escaping
 	if [ -d "${return_path//\\/}" ]; then
 		_color="$_directory_color"
 	else
