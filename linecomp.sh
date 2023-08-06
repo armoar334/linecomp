@@ -38,13 +38,16 @@ compose_case() {
 
 	linecomp_case=$(
 		# yeah i know this could be all one printf, fuck off
-		printf '%s\n' '_key_done=false'
-		printf '%s\n' '_temp=""'
-		printf '%s\n%s\n' 'while [[ $_key_done = false ]]' 'do'
-		printf '%s\n' "IFS= read -rsn1 -d '' _char"
-		printf '%s\n' '_key_done=true'
-		printf '%s\n' '_temp="$_temp$_char"'
-		printf '%s\n' 'case $_temp in'
+		cat <<-'EOF'
+		_key_done=false
+		_temp=""
+		while [[ $_key_done = false ]]
+		do
+		IFS= read -rsn1 -d '' _char
+		_key_done=true
+		_temp="$_temp$_char"
+		case $_temp in
+		EOF
 
 		# Uncustomisables (EOF, Ctrl-c, etc)
 		cat <<-'EOF'
@@ -311,6 +314,8 @@ dir_suggest() {
 	if [[ "$temp_path" == '~/'* ]]; then
 		tilde_yes=true
 		temp_path="${temp_path/~\//"$HOME"\/}"
+	elif [[ "$temp_path" == '/' ]]; then
+		temp_path='/'
 	fi
 	
 	complete_path="${temp_path%/*}"
@@ -323,6 +328,7 @@ dir_suggest() {
 	else
 		files=$(printf '%q\n' */ *)
 	fi
+	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path") 2>/dev/null
 	return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path") 2>/dev/null
 
 	if [ -d "${return_path//\\/}" ]; then
