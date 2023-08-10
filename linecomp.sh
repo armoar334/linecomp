@@ -21,6 +21,8 @@ fi
 
 _histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
 
+_linecomp_path="$BASH_SOURCE"
+source "${_linecomp_path%/*}"/readline_funcs.sh
 
 #trap "" INT SIGINT
 trap "history -a && echo linecomp exited" EXIT
@@ -75,139 +77,7 @@ compose_case() {
 }
 
 
-# Text manipulation
-
-self-insert() {
-	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}$_char${READLINE_LINE:$READLINE_POINT}"
-	((READLINE_POINT+=1))
-	comp_complete
-}
-
-quoted-insert() {
-	read -rsn1 _char
-	read -rsn5 -t 0.005 _temp
-	_char="$_char$_temp"
-	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}$_char${READLINE_LINE:$READLINE_POINT}"
-	((READLINE_POINT+=${#_char}))
-}
-
-bracketed-paste-begin() {
-	_temp=''
-	until [[ "$_temp" == *$'\e[201~' ]]
-	do
-		IFS= read -rsn1 -t 0.01 _char
-		_temp+="$_char"
-	done
-	_temp="${_temp:0:-6}"
-	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}$_temp${READLINE_LINE:$READLINE_POINT}"
-	((READLINE_POINT+="${#_temp}"))
-}
-
-backward-delete-char() {
-	if [[ $READLINE_POINT -gt 0 ]];
-	then
-		READLINE_LINE="${READLINE_LINE:0:$((READLINE_POINT-1))}${READLINE_LINE:$READLINE_POINT}"
-		((READLINE_POINT-=1))
-	fi
-}
-
-delete-char() {
-	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}${READLINE_LINE:$((READLINE_POINT+1))}"
-}
-
-kill-word() {
-	READLINE_LINE="${READLINE_LINE% *}"
-}
-
-tilde-expand() {
-	if [[ "${READLINE_LINE:$READLINE_POINT:1}" == '~' ]];
-	then
-		READLINE_LINE="${READLINE_LINE:0:$((READLINE_POINT))}$HOME${READLINE_LINE:$((READLINE_POINT+1))}"
-		((READLINE_POINT+=${#HOME}))
-	elif [[ "${READLINE_LINE:$((READLINE_POINT-1)):1}" == '~' ]];
-	then
-		READLINE_LINE="${READLINE_LINE:0:$((READLINE_POINT-1))}$HOME${READLINE_LINE:$((READLINE_POINT))}"
-		((READLINE_POINT+=${#HOME}))
-	fi
-}
-
-# Cursor
-forward-char() {
-	if [[ $READLINE_POINT -lt ${#READLINE_LINE} ]];
-	then
-		((READLINE_POINT+=1))
-	fi
-}
-
-forward-word() {
-	_temp="${READLINE_LINE:$(( READLINE_POINT + 1 ))} "
-	_temp="${_temp#*[^[:alnum:]]}"
-	READLINE_POINT="$(( ${#READLINE_LINE} - ${#_temp} ))"
-}
-
-backward-char() {
-	if [[ $READLINE_POINT -gt 0 ]];
-	then
-		((READLINE_POINT-=1))
-	fi
-}
-
-backward-word() {
-	_temp="${READLINE_LINE:0:$READLINE_POINT}"
-	_temp="${_temp%[^[:alnum:]]*}"
-	if ! [[ "$_temp" == *' '* ]];
-	then
-		READLINE_POINT=0
-	else
-		READLINE_POINT=${#_temp}
-	fi
-}
-
-beginning-of-line() {
-	READLINE_POINT=0
-}
-
-end-of-line() {
-	READLINE_POINT=${#READLINE_LINE}
-}
-
-kill-line() {
-	READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}"
-}
-
-complete() {
-	if [[ "$_post_prompt" != *' ' ]];
-	then
-		READLINE_LINE="$_post_prompt"
-		READLINE_POINT=${#READLINE_LINE}
-	fi
-}
-
-
 # Not text
-next-history() {
-	((_comp_hist-=1))
-	if [[ $_comp_hist -le 0 ]]; then _comp_hist=0; fi
-	READLINE_LINE="$(history_get)"
-	READLINE_POINT=${#READLINE_LINE}
-}
-
-previous-history() {
-	((_comp_hist+=1))
-	if [[ $_comp_hist -gt $_histmax ]];
-	then
-		_comp_hist=$_histmax
-	fi
-	READLINE_LINE="$(history_get)"
-	READLINE_POINT=${#READLINE_LINE}
-}
-
-operate-and-get-next() {
-	READLINE_LINE="$(history_get)"
-	accept-line	
-	((_comp_hist+=1))
-	READLINE_LINE="$(history_get)"	
-}
 
 history_get() {
 	set -o history
@@ -219,37 +89,7 @@ history_get() {
 	fi
 }
 
-clear-screen() {
-	clear
-	printf '\e7'
-}
-
 # Meta
-accept-line() {
-	case "$READLINE_LINE" in
-		*"EOM"*"EOM"*|*"EOF"*"EOF"*) _reading=false ;;
-		*'\'|*"EOM"*|*"EOF"*) READLINE_LINE+=$'\n'
-			((READLINE_POINT+=1)) ;;
-		*)
-			if [[ $(bash -nc "$READLINE_LINE" 2>&1) == *'unexpected end of file'* ]];
-			then
-				READLINE_LINE+=$'\n'
-				((READLINE_POINT+=1))
-			else
-				echo
-				if [[ -n "$READLINE_LINE" ]];
-				then
-					history -s "$READLINE_LINE"
-				fi
-				stty "$_default_term_state"
-				eval -- "$READLINE_LINE" # This continues to be bad
-				stty "$_linecomp_term_state"
-				printf '\e7'
-				_reading=false
-				[[ "$READLINE_LINE" == *'bind'* ]] && compose_case # Recreate the case statement if the command has bind
-			fi ;;
-	esac
-}
 
 print_command_line() {
 	local temp_str
@@ -327,7 +167,6 @@ dir_suggest() {
 	else
 		files=$(printf '%q\n' */ *)
 	fi
-	#return_path=$(printf '\n%s' "$files" | grep -m1 -F -- "$temp_path") 2>/dev/null
 	return_path=$(while IFS= read -r line; do if [[ "$line" == "$temp_path"* ]]; then printf '%s\n' "$line"; break; fi; done <<<"$files") # This is probably ass but grep is annoying bc of requiring regex escaping
 	if [ -d "${return_path//\\/}" ]; then
 		_color="$_directory_color"
@@ -354,14 +193,13 @@ man_completion() {
 		if [[ "$OSTYPE" == *darwin* ]];
 		then
 			_man_args=$(man "$man_string" | col -bx | grep -F '-' | tr ' ' $'\n')
-			_man_args=$(<<< "${_man_args//[^[:alpha:]]$'\n'/$'\n'}" grep -- '^-'| uniq)
 		else
 			_man_args=$(man -Tascii "$man_string" | col -bx | grep -F '-' | tr ' ' $'\n' )
-			_man_args=$(<<< "${_man_args//[^[:alpha:]]$'\n'$'\n'}" grep -- '^-'| uniq)
 			# This take 0.3 seconds each for the bash page, of which 0.013 is the sorting
 			# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
 			# -Tascii take this down by ~0.030 but even then its borderline unusable, all bc of pointless formatting bs
 		fi
+		_man_args=$(<<< "${_man_args//[^[:alpha:]]$'\n'/$'\n'}" grep -- '^-'| uniq)
 		_temp=''
 		_man_args=$(printf '%s' "$_man_args" | sed -e 's/[^[:alnum:]]$//g')
 	fi
