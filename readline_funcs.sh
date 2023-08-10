@@ -81,7 +81,7 @@ clear-screen() {
 	printf '\e7'
 }
 complete() {
-	if [[ "$_post_prompt" != *' ' ]];
+	if [[ ${#_post_prompt} -gt ${#READLINE_LINE} ]];
 	then
 		READLINE_LINE="$_post_prompt"
 		READLINE_POINT=${#READLINE_LINE}
