@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+
 # linecomp V2
 # readline "replacment" for bash
 
@@ -161,7 +162,7 @@ dir_suggest() {
 	unfinish_path="${temp_path##*/}"
 
 	# If its a directory
-	if [ -d "${complete_path//\\ / }" ]; then
+	if [ -d "${complete_path//\\ / }"/ ]; then
 		files=$(printf '%q\n' "${complete_path//\\ / }"/*/ "${complete_path//\\ / }"/* )
 	# If it isnt yet (current folder)
 	else
