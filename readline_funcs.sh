@@ -20,7 +20,7 @@ accept-line() {
 					history -s "$READLINE_LINE"
 				fi
 				stty "$_default_term_state"
-				$READLINE_LINE # This continues to be bad
+				eval "$READLINE_LINE" # This continues to be bad
 				stty "$_linecomp_term_state"
 				printf '\e7'
 				_reading=false
