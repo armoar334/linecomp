@@ -133,7 +133,8 @@ comp_complete() {
 				_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_path" ;;
 		esac
 	else
-		_post_prompt=$(printf '%s' "$_commands" | grep -m1 -- "^$READLINE_LINE") 2>/dev/null
+		dir_suggest "${line_array[-1]}"
+		_post_prompt=$(printf '%s' "$return_path"$'\n'"$_commands" | grep -m1 -- "^$READLINE_LINE") 2>/dev/null
 		_color="$_command_color"
 	fi
 	temp_hist=$(history | cut -c 8- | tac | grep -m1 -- "^$READLINE_LINE") 2>/dev/null
