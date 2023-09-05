@@ -14,7 +14,7 @@ accept-line() {
 				READLINE_LINE+=$'\n'
 				((READLINE_POINT+=1))
 			else
-				printf '\e8\e[?25l\e[K%s%s\n' "$_prompt" "${READLINE_LINE//$'\n'/$'\e[K\n >'}"
+				printf '\e8\e[K%s%s\n' "$_prompt" "${READLINE_LINE//$'\n'/$'\e[K\n >'}"
 				if [[ -n "$READLINE_LINE" ]];
 				then
 					history -s "$READLINE_LINE"

@@ -104,13 +104,13 @@ print_command_line() {
 	#echo "${#line_array[-1]}"
 
 	temp_str="${READLINE_LINE//$'\n'/$'\n'$_PS2exp}"
-	printf '\e8\e[?25l\e[K%s' "$_prompt"
+	printf '\e8\e[K%s' "$_prompt"
 	printf '%s' "$temp_str" | cat -v 
 	printf '\e[%sm%s\e[K\e8%s' "$_color" "${_post_prompt:${#READLINE_LINE}}" "$_prompt"
 
 	#[[ $READLINE_POINT -ge 1 ]] && printf '\e[%sC' "$READLINE_POINT"
 
-	printf '\e[0m\e[?25h'
+	printf '\e[0m'
 	temp_str="${READLINE_LINE:0:$READLINE_POINT}"
 	temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
 	printf '%s' "$temp_str" | cat -v
