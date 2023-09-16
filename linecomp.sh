@@ -93,35 +93,20 @@ history_get() {
 # Meta
 
 print_command_line() {
-	local temp_str
+	local whole_line part_line
 
-	# This doesnt technichally need to be a different function but it
-	# reduced jitter to run it all into a variable and print all at once
-	# cat -v (considered harmful) is so that quoted inserts can work
-	# Also makes it slow, but thats for later
-	#temp_str="${line_array[*]:0:${#line_array[@]}-1}"
-	#echo; echo "${#temp_str}"
-	#echo "${#line_array[-1]}"
+	whole_line="${READLINE_LINE//$'\n'/$'\n'${PS2@P}}"
 
-	#temp_str="${READLINE_LINE//$'\n'/$'\n'$_PS2exp}"
-	#printf '\e8\e[?25l\e[K%s' "$_prompt"
-	#printf '%s' "$temp_str" | cat -v 
-	#printf '\e[%sm%s\e[K\e8%s' "$_color" "${_post_prompt:${#READLINE_LINE}}" "$_prompt"
-
-	#[[ $READLINE_POINT -ge 1 ]] && printf '\e[%sC' "$READLINE_POINT"
-
-	#printf '\e[0m\e[?25h'
-	#temp_str="${READLINE_LINE:0:$READLINE_POINT}"
-	#temp_str="${temp_str//$'\n'/$'\n'$_PS2exp}"
-	#printf '%s' "$temp_str" | cat -v
+	part_line="${READLINE_LINE:0:$READLINE_POINT}"
+	part_line="${part_line//$'\n'/$'\n'${PS2@P}}"
 
 	printf '\e8%s%s\e[%sm%s\e[0m\e[K\e8%s%s' \
 		"${PS1@P}" \
-		"$READLINE_LINE" \
+		"$whole_line" \
 		"$_color" \
 		"${_post_prompt:${#READLINE_LINE}}" \
 		"${PS1@P}" \
-		"${READLINE_LINE:0:$READLINE_POINT}"
+		"$part_line"
 }
 
 # Completions
