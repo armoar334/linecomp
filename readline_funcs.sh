@@ -14,7 +14,7 @@ accept-line() {
 				READLINE_LINE+=$'\n'
 				((READLINE_POINT+=1))
 			else
-				echo
+				printf '\e8\e[K%s%s\n' "$_prompt" "${READLINE_LINE//$'\n'/$'\e[K\n >'}"
 				if [[ -n "$READLINE_LINE" ]];
 				then
 					history -s "$READLINE_LINE"
@@ -159,8 +159,11 @@ kill-word() {
 next-history() {
 	((_comp_hist-=1))
 	if [[ $_comp_hist -le 0 ]]; then _comp_hist=0; fi
-	READLINE_LINE="$(history_get)"
-	READLINE_POINT=${#READLINE_LINE}
+	if [[ "$READLINE_LINE" != *$'\n'* ]]
+	then
+		READLINE_LINE="$(history_get)"
+		READLINE_POINT=${#READLINE_LINE}
+	fi
 }
 #next-screen-line
 #non-incremental-forward-search-history
@@ -187,8 +190,11 @@ previous-history() {
 	then
 		_comp_hist=$_histmax
 	fi
-	READLINE_LINE="$(history_get)"
-	READLINE_POINT=${#READLINE_LINE}
+	if [[ "$READLINE_LINE" != *$'\n'* ]]
+	then
+		READLINE_LINE="$(history_get)"
+		READLINE_POINT=${#READLINE_LINE}
+	fi
 }
 #previous-screen-line
 #print-last-kbd-macro
