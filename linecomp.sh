@@ -18,6 +18,10 @@ then
 	echo "Your current shell is not bash, or you did not source the script!"
 	echo "You must run '. linecomp.sh' and not './linecomp.sh'!"
 	exit
+elif [[ "$(set -o | grep vi)" == *'on' ]]
+then
+	echo "You have vi-mode set!"
+	echo "vi-mode is not currently implemented, so you will be forced to use your emacs mode currently"
 fi
 
 _histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
@@ -96,9 +100,11 @@ print_command_line() {
 	local whole_line part_line
 
 	whole_line="${READLINE_LINE//$'\n'/$'\n'${PS2@P}}"
+	whole_line="${whole_line//$'\e'/^[}"
 
 	part_line="${READLINE_LINE:0:$READLINE_POINT}"
 	part_line="${part_line//$'\n'/$'\n'${PS2@P}}"
+	part_line="${part_line//$'\e'/^[}"
 
 	printf '\e8%s%s\e[%sm%s\e[0m\e[K\e8%s%s' \
 		"${PS1@P}" \
@@ -113,7 +119,7 @@ print_command_line() {
 
 comp_complete() {
 	# We sadly need it to interpret backslashes for directory names
-	read -a line_array <<<"$READLINE_LINE"
+	line_array=($READLINE_LINE)
 	line_array=( "${line_array[@]// /\\ }" )
 	if [ "${#line_array[@]}" -gt 1 ]; then
 		case "${line_array[-1]}" in
