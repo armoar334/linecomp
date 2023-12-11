@@ -6,7 +6,7 @@
 accept-line() {
 	case "$READLINE_LINE" in
 		*"EOM"*"EOM"*|*"EOF"*"EOF"*) _reading=false ;;
-		*'\'|*"EOM"*|*"EOF"*) READLINE_LINE+=$'\n'
+		*"\'"|*"EOM"*|*"EOF"*) READLINE_LINE+=$'\n'
 			((READLINE_POINT+=1)) ;;
 		*)
 			if [[ $(bash -nc "$READLINE_LINE" 2>&1) == *'unexpected end of file'* ]];
