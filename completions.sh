@@ -4,26 +4,50 @@ comp_complete() {
 	# We sadly need it to interpret backslashes for directory names
 	line_array=($READLINE_LINE)
 	line_array=( "${line_array[@]// /\\ }" )
-	if [ "${#line_array[@]}" -gt 1 ]; then
-		case "${line_array[-1]}" in
-			'-'*) 
-				man_completion "${line_array[0]}" "${line_array[-1]}"
-				_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_args" ;; # Fix after pipes later
-			*)
-				dir_suggest "${line_array[-1]}"
-				_post_prompt="${line_array[*]:0:${#line_array[@]}-1} $return_path" ;;
-		esac
-	else
-		dir_suggest "${line_array[-1]}"
-		_post_prompt=$(printf '%s' "$return_path"$'\n'"$_commands" | grep -m1 -- "^$READLINE_LINE") 2>/dev/null
-		_color="$_command_color"
-	fi
-	temp_hist=$(history | cut -c 8- | tac | grep -m1 -- "^$READLINE_LINE") 2>/dev/null
-	if [ -n "$temp_hist" ]
+	local comp_array=( )
+
+	case "${line_array[-1]}" in
+		'-'*) 
+			man_completion "${line_array[0]}" "${line_array[-1]}" ;;
+		*)
+			dir_suggest "${line_array[-1]}" ;;
+	esac
+
+	# Compose array of completions
+	local half_way=0
+	local before_split=""
+	local after_split=""
+	if [ "${#line_array[@]}" -gt 1 ]
 	then
-		_post_prompt="$temp_hist"
-		_color="$_history_color"
+		comp_array=( $return_args $return_path )
+	else
+		comp_array=( $_commands $return_path )
 	fi
+
+	_post_prompt=""
+	for line in "${comp_array[@]}"
+	do
+		case "$line" in
+			"${line_array[-1]}"*)
+				line_array[-1]="$line"
+				_post_prompt="${line_array[*]}"
+				break ;;
+		esac
+	done
+	# Do history if this isnt anything
+	if [[ -z $_post_prompt ]]
+	then
+		for line in "${comp_array[@]}"
+		do
+			case "$line" in
+				"${line_array[-1]}"*)
+					line_array[-1]="$line"
+					_post_prompt="${line_array[*]}"
+					break ;;
+			esac
+		done
+	fi
+	
 }
 
 dir_suggest() {
@@ -60,7 +84,6 @@ dir_suggest() {
 	if [ "$tilde_yes" = true ]; then
 		return_path="${return_path/"$HOME"\//~\/}"
 	fi
-
 }
 
 man_completion() {
@@ -86,6 +109,5 @@ man_completion() {
 		_temp=''
 		_man_args=$(printf '%s' "$_man_args" | sed -e 's/[^[:alnum:]]$//g')
 	fi
-	return_args=$(printf '\n%s' "$_man_args" | grep -m1 -F -- "$opt_string") 2>/dev/null
-	_color="$_option_color"
+	return_args="$_man_args"
 }

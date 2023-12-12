@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 # linecomp V2
 # readline "replacment" for bash
 
@@ -9,7 +8,6 @@ _history_color='35'
 _command_color='90'
 _option_color='33'
 _file_color='32'
-
 
 # Check that current shell is bash
 # This works under zsh and crashes out on fish, so p much serves its purpose
@@ -24,15 +22,14 @@ then
 	echo "vi-mode is not currently implemented, so you will be forced to use your emacs mode currently"
 fi
 
-_histmax=$(wc -l "$HISTFILE" | awk '{print $1}')
-
 _linecomp_path="${BASH_SOURCE%/*}"
-if [[ "$_linecomp_path" = "linecomp.sh" ]]
-then
-	source {readline_funcs.sh,completions.sh}
-else
-	source "${_linecomp_path%/*}"/{readline_funcs.sh,completions.sh}
-fi
+case "$_linecomp_path" in
+	"linecomp.sh") _linecomp_path="" ;;
+	*)	_linecomp_path="${_linecomp_path}/" ;;
+esac
+
+source "$_linecomp_path"readline_funcs.sh
+source "$_linecomp_path"completions.sh
 
 #trap "" INT SIGINT
 trap "history -a && echo linecomp exited" EXIT
@@ -86,17 +83,13 @@ compose_case() {
 
 }
 
-
 # Not text
 
 history_get() {
 	set -o history
-	if [[ $_comp_hist == 0 ]];
-	then
-		printf ""
-	else
-		printf '%s' "$(history $_comp_hist | head -1 | cut -c 8-)"
-	fi
+	echo doing stuff
+	readarray -t _hist_array < <(history | awk '{$1=""; print $0}')
+	HISTORY_POINT="${#_hist_array[@]}"
 }
 
 # Meta
@@ -123,7 +116,8 @@ print_command_line() {
 # Other
 
 main_func() {
-	_comp_hist=0
+	history_get
+	HISTORY_POINT="${#_hist_array[@]}"
 	READLINE_POINT=0
 	_reading="true"
 	_prompt="${PS1@P}"
@@ -153,6 +147,7 @@ printf '\e7'
 echo -n "${PS1@P}"
 
 _commands=$(compgen -c | sort -u | awk '{ print length, $0 }' | sort -n -s | cut -d' ' -f2- )
+
 
 _default_term_state="$(stty -g)"
 

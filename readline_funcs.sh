@@ -157,11 +157,14 @@ kill-word() {
 #menu-complete
 #menu-complete-backward
 next-history() {
-	((_comp_hist-=1))
-	if [[ $_comp_hist -le 0 ]]; then _comp_hist=0; fi
+	((HISTORY_POINT+=1))
+	if [[ $HISTORY_POINT -gt ${#_hist_array[@]} ]];
+	then
+		HISTORY_POINT="${#_hist_array[@]}"
+	fi
 	if [[ "$READLINE_LINE" != *$'\n'* ]]
 	then
-		READLINE_LINE="$(history_get)"
+		READLINE_LINE="${_hist_array[$HISTORY_POINT]}"
 		READLINE_POINT=${#READLINE_LINE}
 	fi
 }
@@ -171,12 +174,7 @@ next-history() {
 #non-incremental-reverse-search-history
 #non-incremental-reverse-search-history-again
 #old-menu-complete
-operate-and-get-next() {
-	READLINE_LINE="$(history_get)"
-	accept-line	
-	((_comp_hist+=1))
-	READLINE_LINE="$(history_get)"	
-}
+#operate-and-get-next
 #overwrite-mode
 #possible-command-completions
 #possible-completions
@@ -185,14 +183,11 @@ operate-and-get-next() {
 #possible-username-completions
 #possible-variable-completions
 previous-history() {
-	((_comp_hist+=1))
-	if [[ $_comp_hist -gt $_histmax ]];
-	then
-		_comp_hist=$_histmax
-	fi
+	((HISTORY_POINT-=1))
+	if [[ $HISTORY_POINT -le 0 ]]; then HISTORY_POINT=0; fi
 	if [[ "$READLINE_LINE" != *$'\n'* ]]
 	then
-		READLINE_LINE="$(history_get)"
+		READLINE_LINE="${_hist_array[$HISTORY_POINT]}"
 		READLINE_POINT=${#READLINE_LINE}
 	fi
 }
