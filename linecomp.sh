@@ -87,7 +87,6 @@ compose_case() {
 
 history_get() {
 	set -o history
-	echo doing stuff
 	readarray -t _hist_array < <(history | awk '{$1=""; print $0}')
 	HISTORY_POINT="${#_hist_array[@]}"
 }

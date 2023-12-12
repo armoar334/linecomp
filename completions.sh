@@ -6,22 +6,21 @@ comp_complete() {
 	line_array=( "${line_array[@]// /\\ }" )
 	local comp_array=( )
 
-	case "${line_array[-1]}" in
-		'-'*) 
-			man_completion "${line_array[0]}" "${line_array[-1]}" ;;
-		*)
-			dir_suggest "${line_array[-1]}" ;;
-	esac
-
-	# Compose array of completions
-	local half_way=0
-	local before_split=""
-	local after_split=""
-	if [ "${#line_array[@]}" -gt 1 ]
+	if [[ "${#line_array[@]}" -gt 1 ]]
 	then
-		comp_array=( $return_args $return_path )
+		case "${line_array[-1]}" in
+			'-'*) 
+				man_completion "${line_array[0]}" "${line_array[-1]}"
+				readarray -t comp_array <<<"$return_args"
+				_color="$_option_color" ;;
+			*)
+				dir_suggest "${line_array[-1]}"
+				readarray -t comp_array <<<"$return_path"
+				_color="$_directory_color" ;;
+		esac
 	else
-		comp_array=( $_commands $return_path )
+		readarray -t comp_array <<<"$_commands"
+		_color="$_command_color"
 	fi
 
 	_post_prompt=""
@@ -34,20 +33,6 @@ comp_complete() {
 				break ;;
 		esac
 	done
-	# Do history if this isnt anything
-	if [[ -z $_post_prompt ]]
-	then
-		for line in "${comp_array[@]}"
-		do
-			case "$line" in
-				"${line_array[-1]}"*)
-					line_array[-1]="$line"
-					_post_prompt="${line_array[*]}"
-					break ;;
-			esac
-		done
-	fi
-	
 }
 
 dir_suggest() {
