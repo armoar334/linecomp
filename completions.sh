@@ -83,9 +83,9 @@ man_completion() {
 	then
 		if [[ "$OSTYPE" == *darwin* ]];
 		then
-			_man_args=$(man "$man_string" | col -bx | grep -F '-' | tr ' ' $'\n')
+			_man_args=$(man "$man_string" | col -bx | grep -F '-' | tr ' ' $'\n') 2>/dev/null
 		else
-			_man_args=$(man -Tascii "$man_string" | col -bx | grep -F '-' | tr ' ' $'\n' )
+			_man_args=$(man -Tascii "$man_string" | col -bx | grep -F '-' | tr ' ' $'\n' ) 2>/dev/null
 			# This take 0.3 seconds each for the bash page, of which 0.013 is the sorting
 			# 0.190 IS RIDICULOUS, but also that bc bash's docs are 10,000 pages or smth
 			# -Tascii take this down by ~0.030 but even then its borderline unusable, all bc of pointless formatting bs
