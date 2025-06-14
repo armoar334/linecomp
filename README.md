@@ -1,7 +1,8 @@
+# THIS PROJECT IS FUNCTIONALLY ABANDONED
+I have been trying to get it to a usable state for a while now, and have come to the conclusion that I do not currently have the time or willpower to maintain this. I heavily recommend using [ble.sh](https://github.com/akinomyoga/ble.sh) if you desperately need completions in bash, but honestly its so much easier to just use zsh. I will probably return to this at some point, as I have some early work on a better parsing / suggestion engine sitting on a hard drive, but any further progress with be made with a full rewrite.
+
 # linecomp
 Beta readline replacement and command suggestion in/for ``bash 4.0+``  
-
-
 
 # usage
 source linecomp.sh at the end of your bashrc e.g  
